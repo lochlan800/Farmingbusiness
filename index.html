@@ -51,8 +51,8 @@
     padding: 5px 12px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: nowrap;
+    gap: 8px 12px;
+    flex-wrap: wrap;
     flex-shrink: 0;
   }
   header h1 { font-size: 1.15rem; text-shadow: 0 2px 0 rgba(0,0,0,0.3); white-space: nowrap; }
@@ -64,11 +64,11 @@
     transition: transform 0.15s; white-space: nowrap;
   }
   .money.pop { transform: scale(1.22); }
-  .barn-inv { display: flex; gap: 6px; align-items: center; margin-left: auto; overflow: hidden; }
+  .barn-inv { display: flex; gap: 5px; align-items: center; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
   .barn-inv .item {
     background: var(--cream); color: var(--ink);
     border: 2px solid var(--wood-dark); border-radius: 8px;
-    padding: 1px 7px; font-size: 0.92rem; white-space: nowrap;
+    padding: 1px 6px; font-size: 0.85rem; white-space: nowrap;
     box-shadow: 0 2px 0 rgba(62,38,15,0.6);
   }
   .reset-btn {
