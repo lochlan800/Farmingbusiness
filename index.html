@@ -15,15 +15,25 @@
     --gold: #f2b705;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-  html, body { height: 100%; }
+  html, body { height: 100%; overflow: hidden; }
   body {
     font-family: "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
     background: linear-gradient(180deg, #bfe3f7 0%, #d9edc8 55%, #a8d178 100%);
     color: var(--ink);
-    min-height: 100vh;
-    padding: 12px;
+    padding: 8px;
+    height: 100dvh;
+    display: flex;
   }
-  .game { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .game {
+    flex: 1;
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
 
   /* ---------- Wooden panels ---------- */
   .wood-panel {
@@ -31,73 +41,82 @@
       repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 70px),
       linear-gradient(180deg, var(--plank), var(--plank-dark));
     border: 4px solid var(--wood-dark);
-    border-radius: 16px;
-    box-shadow: 0 5px 0 rgba(62,38,15,0.8), inset 0 2px 0 rgba(255,255,255,0.25);
+    border-radius: 14px;
+    box-shadow: 0 4px 0 rgba(62,38,15,0.8), inset 0 2px 0 rgba(255,255,255,0.25);
     color: var(--cream);
   }
 
-  /* ---------- Header ---------- */
-  header { padding: 10px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  header h1 { font-size: 1.4rem; text-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+  /* ---------- Compact header ---------- */
+  header {
+    padding: 5px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 1.15rem; text-shadow: 0 2px 0 rgba(0,0,0,0.3); white-space: nowrap; }
   .money {
-    font-size: 1.25rem; font-weight: bold; color: var(--ink);
+    font-size: 1.1rem; font-weight: bold; color: var(--ink);
     background: linear-gradient(180deg, #ffe082, #ffca28);
     border: 3px solid #b8860b; border-radius: 999px;
-    padding: 4px 16px; box-shadow: 0 3px 0 #8d6708;
-    transition: transform 0.15s;
+    padding: 2px 14px; box-shadow: 0 2px 0 #8d6708;
+    transition: transform 0.15s; white-space: nowrap;
   }
   .money.pop { transform: scale(1.22); }
-  .barn-inv { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+  .barn-inv { display: flex; gap: 6px; align-items: center; margin-left: auto; overflow: hidden; }
   .barn-inv .item {
     background: var(--cream); color: var(--ink);
-    border: 2px solid var(--wood-dark); border-radius: 10px;
-    padding: 2px 9px; font-size: 1rem;
+    border: 2px solid var(--wood-dark); border-radius: 8px;
+    padding: 1px 7px; font-size: 0.92rem; white-space: nowrap;
     box-shadow: 0 2px 0 rgba(62,38,15,0.6);
   }
-
-  /* ---------- Layout ---------- */
-  .main { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
-  .farm-side { flex: 1 1 560px; display: flex; flex-direction: column; gap: 12px; min-width: 320px; }
-  .queue-side { flex: 1 1 280px; min-width: 260px; }
+  .reset-btn {
+    font-family: inherit; font-size: 1rem; color: var(--cream);
+    background: none; border: 2px solid rgba(255,246,227,0.5); border-radius: 8px;
+    width: 30px; height: 30px; cursor: pointer; flex-shrink: 0;
+  }
+  .reset-btn:hover { background: rgba(255,255,255,0.12); }
 
   /* ============================================================
      THE FARM SCENE — one continuous landscape you walk around in
      ============================================================ */
   .scene {
     position: relative;
-    height: clamp(430px, 60vw, 570px);
+    flex: 1;
+    min-height: 0;
     border: 6px solid var(--wood-dark);
-    border-radius: 20px;
+    border-radius: 18px;
     overflow: hidden;
-    background: linear-gradient(180deg, #7ec8f2 0%, #aadcf7 28%, #d7efff 42%);
-    box-shadow: 0 6px 0 rgba(62,38,15,0.8);
+    background: linear-gradient(180deg, #7ec8f2 0%, #aadcf7 26%, #d7efff 40%);
+    box-shadow: 0 5px 0 rgba(62,38,15,0.8);
     touch-action: none;
   }
 
   /* sky */
   .sun {
-    position: absolute; top: 5%; right: 7%;
-    width: 64px; height: 64px; border-radius: 50%;
+    position: absolute; top: 4%; right: 6%;
+    width: 60px; height: 60px; border-radius: 50%;
     background: radial-gradient(circle, #fff7ae 30%, #ffd54f 60%, rgba(255,213,79,0) 72%);
     box-shadow: 0 0 50px 22px rgba(255,230,120,0.55);
     animation: sunPulse 4s ease-in-out infinite alternate;
   }
   @keyframes sunPulse { from { transform: scale(1); } to { transform: scale(1.08); } }
-  .cloud { position: absolute; font-size: 46px; opacity: 0.9; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.08)); }
-  .cloud.c1 { top: 4%; animation: drift 70s linear infinite; }
-  .cloud.c2 { top: 14%; font-size: 32px; animation: drift 95s linear infinite; animation-delay: -40s; }
-  .cloud.c3 { top: 1%; font-size: 26px; animation: drift 120s linear infinite; animation-delay: -70s; }
+  .cloud { position: absolute; font-size: 44px; opacity: 0.9; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.08)); }
+  .cloud.c1 { top: 3%; animation: drift 70s linear infinite; }
+  .cloud.c2 { top: 13%; font-size: 30px; animation: drift 95s linear infinite; animation-delay: -40s; }
+  .cloud.c3 { top: 1%; font-size: 24px; animation: drift 120s linear infinite; animation-delay: -70s; }
   @keyframes drift { from { left: -80px; } to { left: 105%; } }
 
   /* rolling hills on the horizon */
   .hill { position: absolute; border-radius: 50%; }
-  .hill.h1 { left: -18%; top: 27%; width: 75%; height: 24%; background: #79ad4c; }
-  .hill.h2 { right: -22%; top: 25%; width: 85%; height: 28%; background: #6da23e; }
-  .hill.h3 { left: 28%; top: 30%; width: 66%; height: 20%; background: #82b656; }
+  .hill.h1 { left: -18%; top: 25%; width: 75%; height: 22%; background: #79ad4c; }
+  .hill.h2 { right: -22%; top: 23%; width: 85%; height: 26%; background: #6da23e; }
+  .hill.h3 { left: 28%; top: 28%; width: 66%; height: 18%; background: #82b656; }
 
   /* the meadow */
   .grass {
-    position: absolute; left: 0; right: 0; top: 37%; bottom: 0;
+    position: absolute; left: 0; right: 0; top: 35%; bottom: 0;
     background:
       repeating-linear-gradient(100deg, rgba(255,255,255,0.045) 0 70px, transparent 70px 140px),
       linear-gradient(180deg, #6da23e 0%, #79b046 22%, #85bb4f 55%, #8fc258 100%);
@@ -106,7 +125,7 @@
   .horizon-tree { position: absolute; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.15)); z-index: 2; }
 
   /* the barn */
-  .barn { position: absolute; left: 4.5%; top: 21%; width: 132px; height: 96px; z-index: 2; filter: drop-shadow(0 5px 4px rgba(0,0,0,0.18)); }
+  .barn { position: absolute; left: 3.5%; top: 18%; width: 132px; height: 96px; z-index: 2; filter: drop-shadow(0 5px 4px rgba(0,0,0,0.18)); }
   .barn .body {
     position: absolute; bottom: 0; left: 8px; width: 116px; height: 58px;
     background: linear-gradient(180deg, #d94f37, #c04028);
@@ -130,8 +149,8 @@
     position: absolute; bottom: 62px; left: 56px; width: 20px; height: 16px;
     background: #f6e7c8; border: 3px solid #7e2517; border-radius: 50% 50% 0 0; z-index: 1;
   }
-  .tractor { position: absolute; left: 18%; top: 31%; font-size: 30px; z-index: 2; transform: scaleX(-1); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.2)); }
-  .chicken { position: absolute; left: 7%; top: 52%; font-size: 24px; z-index: 3; animation: peck 2.6s ease-in-out infinite; transform-origin: bottom center; }
+  .tractor { position: absolute; left: 15%; top: 28%; font-size: 30px; z-index: 2; transform: scaleX(-1); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.2)); }
+  .chicken { position: absolute; left: 6%; top: 50%; font-size: 24px; z-index: 3; animation: peck 2.6s ease-in-out infinite; transform-origin: bottom center; }
   @keyframes peck {
     0%, 55%, 100% { transform: rotate(0deg); }
     62%, 76% { transform: rotate(24deg) translateY(3px); }
@@ -140,7 +159,7 @@
   .flower { position: absolute; z-index: 2; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15)); }
 
   /* the field — a single trapezoid of tilled earth drawn in perspective */
-  .field-layer { position: absolute; left: 15%; width: 70%; top: 42%; height: 52%; }
+  .field-layer { position: absolute; left: 10%; width: 68%; top: 40%; height: 55%; }
   .field-dirt { clip-path: polygon(17% 0%, 83% 0%, 98% 100%, 2% 100%); }
   .soil {
     position: absolute; left: 0; right: 0; bottom: 0;
@@ -265,7 +284,7 @@
     border-radius: 50%;
   }
   #farmer .fbody {
-    display: block; font-size: 44px; line-height: 1;
+    display: block; font-size: 46px; line-height: 1;
     filter: drop-shadow(0 4px 3px rgba(0,0,0,0.25));
   }
   #farmer.walking .fbody { animation: hop 0.28s ease-in-out infinite alternate; }
@@ -280,6 +299,69 @@
     60% { transform: rotate(28deg); }
     100% { transform: rotate(10deg); }
   }
+
+  /* ------- the market stand & customers in the scene ------- */
+  .stand { position: absolute; left: 91%; top: 52%; width: 104px; height: 86px; transform: translate(-50%, -100%); z-index: 520; pointer-events: none; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.2)); }
+  .stand .awning {
+    position: absolute; top: 0; left: 0; right: 0; height: 30px;
+    background: repeating-linear-gradient(90deg, #e53935 0 16px, #fdfdfd 16px 32px);
+    border: 3px solid var(--wood-dark); border-radius: 10px 10px 4px 4px;
+  }
+  .stand .awning::after {
+    content: ""; position: absolute; left: -3px; right: -3px; bottom: -8px; height: 8px;
+    background: repeating-linear-gradient(90deg, #e53935 0 16px, #fdfdfd 16px 32px);
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 87.5% 100%, 75% 40%, 62.5% 100%, 50% 40%, 37.5% 100%, 25% 40%, 12.5% 100%, 0 40%);
+  }
+  .stand .counter {
+    position: absolute; bottom: 0; left: 10px; right: 10px; height: 34px;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 26px),
+      linear-gradient(180deg, var(--plank), var(--plank-dark));
+    border: 3px solid var(--wood-dark); border-radius: 4px;
+  }
+  .stand .legL, .stand .legR { position: absolute; bottom: 30px; width: 6px; height: 26px; background: #7a5028; border: 2px solid var(--wood-dark); }
+  .stand .legL { left: 14px; } .stand .legR { right: 14px; }
+  .stand .basket { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); font-size: 22px; }
+
+  .cust { position: absolute; cursor: pointer; }
+  .cin { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .cbody { font-size: 40px; line-height: 1; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.25)); }
+  .cust.moving .cbody { animation: hop 0.3s ease-in-out infinite alternate; }
+  .cust .cshadow {
+    position: absolute; left: 50%; bottom: -3px;
+    width: 30px; height: 9px; transform: translateX(-50%);
+    background: radial-gradient(ellipse, rgba(0,0,0,0.25), rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+  }
+  .bubble {
+    position: absolute; bottom: calc(100% + 8px); right: -6px;
+    background: #fffdf6; color: var(--ink);
+    border: 2px solid #cfa76f; border-radius: 12px;
+    padding: 5px 9px 7px;
+    font-size: 14px; line-height: 1.25; white-space: nowrap;
+    box-shadow: 0 3px 0 rgba(90,60,25,0.35);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .bubble b { font-size: 15px; }
+  .bubble::after {
+    content: ""; position: absolute; bottom: -8px; right: 18px;
+    width: 12px; height: 12px; background: #fffdf6;
+    border-right: 2px solid #cfa76f; border-bottom: 2px solid #cfa76f;
+    transform: rotate(45deg) skew(12deg, 12deg);
+  }
+  .cust.can-sell .bubble {
+    border-color: #43a047;
+    box-shadow: 0 3px 0 rgba(90,60,25,0.35), 0 0 0 3px rgba(102,187,106,0.55);
+    animation: sellPulse 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes sellPulse { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+  .cust.near .bubble { box-shadow: 0 3px 0 rgba(90,60,25,0.35), 0 0 0 3px rgba(255,235,59,0.85); }
+  .cust.leaving { transition: opacity 0.45s; opacity: 0; }
+  .pbar {
+    display: block; height: 4px; margin-top: 4px;
+    background: rgba(0,0,0,0.15); border-radius: 2px; overflow: hidden;
+  }
+  .pbar span { display: block; height: 100%; background: #66bb6a; border-radius: 2px; }
 
   /* ------- touch controls ------- */
   .stick {
@@ -299,9 +381,9 @@
     box-shadow: 0 3px 6px rgba(0,0,0,0.25);
   }
   .action-btn {
-    position: absolute; right: 14px; bottom: 14px; z-index: 1001;
-    width: 68px; height: 68px; border-radius: 50%;
-    font-size: 30px; font-family: inherit;
+    position: absolute; right: 12px; bottom: 12px; z-index: 1001;
+    width: 64px; height: 64px; border-radius: 50%;
+    font-size: 28px; font-family: inherit;
     background: linear-gradient(180deg, #ffe082, #ffca28);
     border: 4px solid #b8860b;
     box-shadow: 0 4px 0 #8d6708, 0 6px 12px rgba(0,0,0,0.25);
@@ -310,89 +392,49 @@
   }
   .action-btn:active { transform: scale(0.92); }
   .action-btn.idle { filter: grayscale(0.9) opacity(0.55); }
-  .hint {
-    padding: 6px 12px; font-size: 0.85rem; text-align: center;
-    color: var(--cream);
-  }
 
-  /* buy-land button on the seed shelf */
-  .land-btn {
-    font-family: inherit; font-size: 0.9rem; color: var(--cream);
-    background: linear-gradient(180deg, #b07c46, #96662f);
-    border: 3px solid var(--wood-dark); border-radius: 12px;
-    padding: 6px 10px; cursor: pointer; text-align: center; line-height: 1.3;
-    box-shadow: 0 3px 0 rgba(62,38,15,0.7);
-    transition: transform 0.1s;
+  /* ---------- Bottom bar: seeds + land + hint, one row ---------- */
+  .bottombar {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
-  .land-btn:hover { transform: translateY(-2px); }
-  .land-btn .big { font-size: 1.5rem; display: block; }
-  .land-btn b { color: #ffe082; }
-  .land-btn small { display: block; color: #f3dcae; }
-  .land-btn.sold-out { display: none; }
-
-  /* ---------- Seed shelf ---------- */
-  .shop { padding: 10px 12px; }
-  .shop h2, .queue-panel h2 {
-    font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
-    margin-bottom: 8px; text-shadow: 0 1px 0 rgba(0,0,0,0.3);
-  }
-  .seeds { display: flex; gap: 8px; flex-wrap: wrap; }
-  .seed-btn {
-    font-family: inherit; font-size: 0.9rem; color: var(--ink);
+  .seeds { display: flex; gap: 6px; flex-wrap: nowrap; }
+  .seed-btn, .land-btn {
+    font-family: inherit; font-size: 0.72rem; color: var(--ink);
     background: linear-gradient(180deg, #fffbe8, #f3e5c0);
-    border: 3px solid #c9a86a; border-radius: 12px;
-    padding: 6px 10px; cursor: pointer; text-align: center; line-height: 1.3;
-    box-shadow: 0 3px 0 rgba(90,60,25,0.5);
+    border: 3px solid #c9a86a; border-radius: 10px;
+    padding: 3px 7px; cursor: pointer; text-align: center; line-height: 1.25;
+    box-shadow: 0 2px 0 rgba(90,60,25,0.5);
     transition: transform 0.1s;
+    white-space: nowrap;
   }
-  .seed-btn:hover { transform: translateY(-2px); }
+  .seed-btn:hover, .land-btn:hover { transform: translateY(-2px); }
   .seed-btn.selected {
     border-color: var(--gold);
     background: linear-gradient(180deg, #fff7c9, #ffe082);
-    box-shadow: 0 3px 0 #b8860b, 0 0 0 2px var(--gold);
+    box-shadow: 0 2px 0 #b8860b, 0 0 0 2px var(--gold);
   }
   .seed-btn.locked { filter: grayscale(1); opacity: 0.55; cursor: not-allowed; }
-  .seed-btn .big { font-size: 1.5rem; display: block; }
-  .seed-btn small { display: block; color: #6d5b45; }
-
-  /* ---------- Customer queue / farm stand ---------- */
-  .queue-panel { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 340px; }
-  .stall {
-    text-align: center; font-size: 1.4rem;
-    background: repeating-linear-gradient(90deg, #e53935 0 26px, #fdfdfd 26px 52px);
-    border-radius: 12px 12px 6px 6px;
-    padding: 4px 0;
-    border: 3px solid var(--wood-dark);
-    color: var(--ink);
-    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
-    box-shadow: 0 3px 0 rgba(62,38,15,0.6);
+  .seed-btn .big, .land-btn .big { font-size: 1.25rem; display: block; }
+  .land-btn {
+    color: var(--cream);
+    background: linear-gradient(180deg, #b07c46, #96662f);
+    border-color: var(--wood-dark);
+    box-shadow: 0 2px 0 rgba(62,38,15,0.7);
   }
-  .customer {
-    background: linear-gradient(180deg, #fdf4e3, #f6e7c8);
-    color: var(--ink);
-    border: 3px solid #cfa76f; border-radius: 14px;
-    padding: 8px 10px;
-    display: flex; align-items: center; gap: 10px;
-    animation: walkin 0.4s ease-out;
-    position: relative; overflow: hidden;
-    box-shadow: 0 3px 0 rgba(90,60,25,0.4);
+  .land-btn b { color: #ffe082; }
+  .land-btn.sold-out { display: none; }
+  .hintmini {
+    margin-left: auto;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    text-align: right;
+    color: #f7e7c6;
   }
-  @keyframes walkin { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
-  .customer.leaving { transition: all 0.4s; opacity: 0; transform: translateX(-40px); }
-  .customer .face { font-size: 2rem; }
-  .customer .wants { flex: 1; line-height: 1.35; font-size: 0.95rem; }
-  .customer .wants b { font-size: 1.05rem; }
-  .patience { position: absolute; left: 0; bottom: 0; height: 4px; background: #66bb6a; transition: width 0.5s linear, background 0.5s; }
-  .sell-btn {
-    font-family: inherit; font-size: 0.95rem; font-weight: bold; color: var(--ink);
-    background: linear-gradient(180deg, #ffe082, #ffca28);
-    border: 3px solid #b8860b; border-radius: 10px;
-    padding: 6px 12px; cursor: pointer;
-    box-shadow: 0 2px 0 #8d6708;
-  }
-  .sell-btn:disabled { background: #e0e0e0; border-color: #aaa; color: #888; cursor: not-allowed; box-shadow: none; }
-  .sell-btn:not(:disabled):hover { transform: scale(1.06); }
-  .empty-queue { text-align: center; color: #ffe9c2; font-style: italic; padding: 20px 6px; }
+  @media (max-width: 860px) { .hintmini { display: none; } }
 
   /* ---------- Toasts & floaters ---------- */
   #toasts {
@@ -412,12 +454,6 @@
     text-shadow: 0 1px 0 rgba(255,255,255,0.7);
   }
   @keyframes floatup { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-46px); } }
-
-  footer { text-align: center; font-size: 0.85rem; color: #5d4c38; padding-bottom: 8px; }
-  footer button {
-    font-family: inherit; background: none; border: none;
-    color: #8a6d4a; text-decoration: underline; cursor: pointer; font-size: 0.85rem;
-  }
 </style>
 </head>
 <body>
@@ -426,81 +462,68 @@
     <h1>🌾 Tiny Farm</h1>
     <div class="money" id="money">$0</div>
     <div class="barn-inv" id="barnInv"></div>
+    <button class="reset-btn" id="reset" title="Start over">↺</button>
   </header>
 
-  <div class="main">
-    <div class="farm-side">
-      <div class="scene" id="scene">
-        <div class="sun"></div>
-        <div class="cloud c1">☁️</div>
-        <div class="cloud c2">☁️</div>
-        <div class="cloud c3">☁️</div>
-        <div class="hill h1"></div>
-        <div class="hill h2"></div>
-        <div class="hill h3"></div>
-        <div class="grass"></div>
-        <div class="horizon-tree" style="left:27%; top:26%; font-size:34px;">🌳</div>
-        <div class="horizon-tree" style="left:66%; top:24%; font-size:42px;">🌳</div>
-        <div class="horizon-tree" style="left:89%; top:27%; font-size:30px;">🌲</div>
-        <div class="horizon-tree" style="left:2%;  top:60%; font-size:56px;">🌳</div>
-        <div class="horizon-tree" style="left:90%; top:66%; font-size:60px;">🌳</div>
-        <div class="barn">
-          <div class="roof"></div>
-          <div class="loft"></div>
-          <div class="body"></div>
-          <div class="door"></div>
-        </div>
-        <div class="tractor">🚜</div>
-        <div class="chicken">🐓</div>
-        <div class="flower" style="left:10%; top:72%; font-size:18px;">🌻</div>
-        <div class="flower" style="left:6%;  top:88%; font-size:16px;">🌼</div>
-        <div class="flower" style="left:92%; top:50%; font-size:14px;">🌷</div>
-        <div class="flower" style="left:94%; top:84%; font-size:18px;">🌼</div>
-        <div class="flower" style="left:88%; top:93%; font-size:16px;">🍄</div>
-        <div class="flower" style="left:26%; top:39%; font-size:12px;">🌼</div>
+  <div class="scene" id="scene">
+    <div class="sun"></div>
+    <div class="cloud c1">☁️</div>
+    <div class="cloud c2">☁️</div>
+    <div class="cloud c3">☁️</div>
+    <div class="hill h1"></div>
+    <div class="hill h2"></div>
+    <div class="hill h3"></div>
+    <div class="grass"></div>
+    <div class="horizon-tree" style="left:25%; top:24%; font-size:34px;">🌳</div>
+    <div class="horizon-tree" style="left:62%; top:22%; font-size:42px;">🌳</div>
+    <div class="horizon-tree" style="left:84%; top:25%; font-size:30px;">🌲</div>
+    <div class="horizon-tree" style="left:1%;  top:58%; font-size:56px;">🌳</div>
+    <div class="barn">
+      <div class="roof"></div>
+      <div class="loft"></div>
+      <div class="body"></div>
+      <div class="door"></div>
+    </div>
+    <div class="tractor">🚜</div>
+    <div class="chicken">🐓</div>
+    <div class="flower" style="left:8%;  top:70%; font-size:18px;">🌻</div>
+    <div class="flower" style="left:4%;  top:88%; font-size:16px;">🌼</div>
+    <div class="flower" style="left:82%; top:44%; font-size:14px;">🌷</div>
+    <div class="flower" style="left:5%;  top:44%; font-size:14px;">🌼</div>
+    <div class="flower" style="left:80%; top:96%; font-size:16px;">🍄</div>
+    <div class="flower" style="left:24%; top:37%; font-size:12px;">🌼</div>
 
-        <div class="field-layer field-dirt">
-          <div class="soil" id="soil"></div>
-        </div>
-        <div class="field-layer" id="fieldSpots">
-          <div class="fence"></div>
-        </div>
-
-        <div id="farmer">
-          <div class="fshadow"></div>
-          <span class="axe">🪓</span>
-          <span class="fbody">🧑‍🌾</span>
-        </div>
-
-        <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
-        <button class="action-btn idle" id="actionBtn" title="Plant / chop">🚶</button>
-      </div>
-
-      <div class="hint wood-panel">
-        🕹️ Walk with <b>WASD / arrow keys</b> (or drag a thumb on the left of the farm) ·
-        <b>Space</b> or the big button to plant &amp; chop 🪓
-      </div>
-
-      <div class="shop wood-panel">
-        <h2>🛒 Seeds — pick one, then walk to a dirt mound and plant</h2>
-        <div class="seeds" id="seeds"></div>
-      </div>
+    <div class="field-layer field-dirt">
+      <div class="soil" id="soil"></div>
+    </div>
+    <div class="field-layer" id="fieldSpots">
+      <div class="fence"></div>
     </div>
 
-    <div class="queue-side">
-      <div class="queue-panel wood-panel">
-        <div class="stall">🧺 FARM STAND 🧺</div>
-        <h2>👥 Customer queue</h2>
-        <div id="queue"></div>
-        <div class="empty-queue" id="emptyQueue">No customers yet…<br>they'll wander over soon! 🚶</div>
-      </div>
+    <div class="stand">
+      <div class="awning"></div>
+      <div class="legL"></div><div class="legR"></div>
+      <div class="counter"></div>
+      <span class="basket">🧺</span>
     </div>
+
+    <div id="farmer">
+      <div class="fshadow"></div>
+      <span class="axe">🪓</span>
+      <span class="fbody">🧑‍🌾</span>
+    </div>
+
+    <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
+    <button class="action-btn idle" id="actionBtn" title="Plant / chop / sell">🚶</button>
   </div>
 
-  <footer>
-    Grow crops tall, chop them down ✨ and sell them to customers to buy more land!
-    &nbsp;·&nbsp; <button id="reset">Start over</button>
-  </footer>
+  <div class="bottombar wood-panel">
+    <div class="seeds" id="seeds"></div>
+    <div class="hintmini">
+      🕹️ <b>WASD/arrows</b> walk · <b>Space</b> plant/chop/sell<br>
+      📱 left thumb = walk, gold button = act · tap a customer to sell
+    </div>
+  </div>
 </div>
 
 <div id="toasts"></div>
@@ -577,11 +600,19 @@ const ROW_SCALE  = [1.00, 0.88, 0.77, 0.67, 0.58];
 const ROW_SPREAD = [1.00, 0.91, 0.82, 0.73, 0.64];
 
 // where the field layer sits inside the scene (must match the CSS above)
-const FIELD_LEFT = 15, FIELD_WIDTH = 70, FIELD_TOP = 42, FIELD_HEIGHT = 52;
+const FIELD_LEFT = 10, FIELD_WIDTH = 68, FIELD_TOP = 40, FIELD_HEIGHT = 55;
+
+// where customers queue up by the market stand (scene %, front of queue first)
+const QUEUE_SLOTS = [
+  { x: 90, y: 63 },
+  { x: 87, y: 75 },
+  { x: 84, y: 87 },
+  { x: 81, y: 98 },
+];
 
 // ---------------- State ----------------
 let state = null;
-let customers = [];          // { id, face, crop, qty, arrivedAt }
+let customers = [];          // { id, face, crop, qty, arrivedAt, px, py }
 let selectedSeed = "wheat";
 let nextCustomerAt = 0;
 let customerId = 0;
@@ -659,7 +690,7 @@ function floater(text, x, y, color = "#2e7d32") {
   setTimeout(() => el.remove(), 1000);
 }
 
-// floaters anchored to a point in the scene (for farmer actions)
+// floaters anchored to a point in the scene
 function sceneFloater(text, sx, sy, color) {
   const r = $("scene").getBoundingClientRect();
   floater(text, r.left + r.width * sx / 100, r.top + r.height * sy / 100 - 40, color);
@@ -710,9 +741,9 @@ function buildPlantHTML(crop, scale) {
   for (const [x, sw, tilt, hf] of p.stems || []) {
     inner += `<i class="stem${p.stake ? " stake" : ""}" style="left:${x * scale}px; width:${Math.max(2, sw * scale)}px; height:${Math.round(hf * 100)}%; transform: rotate(${tilt}deg);"></i>`;
   }
-  for (const [dir, flip] of (p.cornleaves || []).map((c, j) => [c[0], c[1]])) {
+  for (const [frac, flip] of p.cornleaves || []) {
     const side = flip > 0 ? "left:" + (17 * scale) + "px" : "left:" + (1 * scale) + "px";
-    inner += `<i class="cornleaf${flip > 0 ? " flip" : ""}" style="${side}; bottom:${Math.round(dir * 100)}%; width:${16 * scale}px; height:${28 * scale}px;"></i>`;
+    inner += `<i class="cornleaf${flip > 0 ? " flip" : ""}" style="${side}; bottom:${Math.round(frac * 100)}%; width:${16 * scale}px; height:${28 * scale}px;"></i>`;
   }
   for (const [x, b, d] of p.balls || []) {
     const dd = d * scale;
@@ -834,13 +865,13 @@ const farmer = {
   keys: new Set(),
   joy: null,               // { id, ox, oy, dx, dy } active touch joystick
 };
-const Y_MIN = 41, Y_MAX = 96;
+const Y_MIN = 39, Y_MAX = 97;
 
 function farmerScale(y) {
   return 0.55 + (y - Y_MIN) / (Y_MAX - Y_MIN) * 0.5;
 }
 
-// what the farmer could act on right now: nearest mound/crop/weed/sign in reach
+// what the farmer could act on right now: nearest mound/crop/weed/customer in reach
 function nearestTarget() {
   let best = null, bestD = 9.5;      // interaction radius in scene %
   const consider = (x, y, kind, idx) => {
@@ -858,6 +889,9 @@ function nearestTarget() {
     if (!p) consider(x, y, "plant", i);
     else if (Date.now() - p.plantedAt >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
   }
+  for (const c of customers) {
+    consider(c.px, c.py, "sell", "c" + c.id);
+  }
   return best;
 }
 
@@ -867,6 +901,7 @@ function updateNearHighlight(t) {
   if (key === lastNear) return;
   lastNear = key;
   for (const s of spotEls) s.el.classList.remove("near");
+  for (const [, ce] of custEls) ce.el.classList.remove("near");
   const btn = $("actionBtn");
   if (!t) {
     btn.textContent = "🚶";
@@ -874,8 +909,16 @@ function updateNearHighlight(t) {
     return;
   }
   btn.classList.remove("idle");
-  btn.textContent = t.kind === "plant" ? CROPS[selectedSeed].emoji : t.kind === "chop" ? "🪓" : "🪧";
-  spotEls[t.idx].el.classList.add("near");
+  btn.textContent =
+    t.kind === "plant" ? CROPS[selectedSeed].emoji :
+    t.kind === "chop"  ? "🪓" :
+    t.kind === "sell"  ? "💰" : "🪧";
+  if (t.kind === "sell") {
+    const ce = custEls.get(Number(String(t.idx).slice(1)));
+    if (ce) ce.el.classList.add("near");
+  } else {
+    spotEls[t.idx].el.classList.add("near");
+  }
 }
 
 function doAction() {
@@ -884,6 +927,7 @@ function doAction() {
   if (!t) return;
   if (t.kind === "plant") plantAt(t.idx);
   else if (t.kind === "chop") chopAt(t.idx);
+  else if (t.kind === "sell") serve(Number(String(t.idx).slice(1)));
   else buyLand();
 }
 
@@ -943,19 +987,80 @@ function updateFarmer(dt) {
   updateNearHighlight(nearestTarget());
 }
 
-// ---------------- Rendering (header / shop / queue) ----------------
+// ---------------- Customers: real people at the stand ----------------
+const custEls = new Map();   // id -> { el, barFill }
+
+function buildCustomerEl(cust) {
+  const c = CROPS[cust.crop];
+  const el = document.createElement("div");
+  el.className = "cust moving";
+  el.innerHTML = `
+    <div class="cin">
+      <div class="bubble">${cust.qty}× ${c.emoji} <b>$${c.sell * cust.qty}</b><span class="pbar"><span></span></span></div>
+      <div class="cshadow"></div>
+      <span class="cbody">${cust.face}</span>
+    </div>`;
+  el.addEventListener("click", (ev) => { ev.stopPropagation(); serve(cust.id); });
+  $("scene").appendChild(el);
+  custEls.set(cust.id, { el, barFill: el.querySelector(".pbar span") });
+  return el;
+}
+
+// called on the slow tick: create/remove customer elements, refresh bubbles
+function renderCustomers() {
+  const now = Date.now();
+  for (const [id, ce] of custEls) {
+    if (!customers.some(c => c.id === id) && !ce.el.classList.contains("leaving")) {
+      ce.el.classList.add("leaving");
+      setTimeout(() => { ce.el.remove(); custEls.delete(id); }, 500);
+    }
+  }
+  for (const cust of customers) {
+    let ce = custEls.get(cust.id);
+    if (!ce) { buildCustomerEl(cust); ce = custEls.get(cust.id); }
+    const left = Math.max(0, 1 - (now - cust.arrivedAt) / PATIENCE_MS);
+    ce.barFill.style.width = (left * 100) + "%";
+    ce.barFill.style.background = left < 0.3 ? "#ef5350" : left < 0.6 ? "#ffa726" : "#66bb6a";
+    ce.el.classList.toggle("can-sell", (state.barn[cust.crop] || 0) >= cust.qty);
+  }
+}
+
+// called every frame: walk customers to their place in the queue
+function moveCustomers(dt) {
+  customers.forEach((cust, qi) => {
+    const ce = custEls.get(cust.id);
+    if (!ce) return;
+    const slot = QUEUE_SLOTS[Math.min(qi, QUEUE_SLOTS.length - 1)];
+    const dx = slot.x - cust.px, dy = slot.y - cust.py;
+    const dist = Math.hypot(dx, dy);
+    const moving = dist > 0.6;
+    if (moving) {
+      const step = Math.min(dist, 24 * dt);
+      cust.px += dx / dist * step;
+      cust.py += dy / dist * step;
+    }
+    const s = farmerScale(Math.min(cust.py, Y_MAX)) * 0.92;
+    ce.el.style.left = cust.px + "%";
+    ce.el.style.top = cust.py + "%";
+    ce.el.style.zIndex = Math.round(cust.py * 10);
+    ce.el.style.transform = `translate(-50%, -96%) scale(${s.toFixed(3)})`;
+    ce.el.classList.toggle("moving", moving);
+  });
+}
+
+// ---------------- Rendering (header / shop) ----------------
 function renderHeader() {
   $("money").textContent = "$" + state.money;
   const inv = $("barnInv");
   inv.innerHTML = "";
   const entries = Object.entries(state.barn).filter(([, n]) => n > 0);
   if (entries.length === 0) {
-    inv.innerHTML = '<span class="item">🧺 barn is empty</span>';
+    inv.innerHTML = '<span class="item">🧺 empty</span>';
   } else {
     for (const [crop, n] of entries) {
       const d = document.createElement("span");
       d.className = "item";
-      d.textContent = `${CROPS[crop].emoji} ×${n}`;
+      d.textContent = `${CROPS[crop].emoji}×${n}`;
       inv.appendChild(d);
     }
   }
@@ -968,9 +1073,10 @@ function renderSeeds() {
     const locked = state.plotsOwned < c.unlockPlots;
     const btn = document.createElement("button");
     btn.className = "seed-btn" + (key === selectedSeed ? " selected" : "") + (locked ? " locked" : "");
+    btn.title = locked ? `${c.name} — own ${c.unlockPlots} plots to unlock` : `${c.name} — plant $${c.cost}, sells $${c.sell}`;
     btn.innerHTML = locked
-      ? `<span class="big">🔒</span>${c.name}<small>${c.unlockPlots} plots to unlock</small>`
-      : `<span class="big">${c.emoji}</span>${c.name}<small>plant $${c.cost} · sells $${c.sell}</small>`;
+      ? `<span class="big">🔒</span>${c.unlockPlots} plots`
+      : `<span class="big">${c.emoji}</span>$${c.cost}`;
     btn.onclick = () => {
       if (locked) { sndNope(); toast(`Own ${c.unlockPlots} plots to unlock ${c.name}!`); return; }
       selectedSeed = key;
@@ -983,53 +1089,17 @@ function renderSeeds() {
   const landBtn = document.createElement("button");
   landBtn.id = "landBtn";
   landBtn.className = "land-btn" + (state.plotsOwned >= GRID ? " sold-out" : "");
-  landBtn.innerHTML = `<span class="big">🪧</span>New plot <b>$${landPrice()}</b><small>or walk to the weeds</small>`;
+  landBtn.title = "Buy the next plot of land (or walk to the weeds)";
+  landBtn.innerHTML = `<span class="big">🪧</span><b>$${landPrice()}</b>`;
   landBtn.onclick = () => buyLand();
   wrap.appendChild(landBtn);
-}
-
-// reconcile customer cards in place so their animations don't restart every tick
-function renderQueue() {
-  const wrap = $("queue");
-  $("emptyQueue").style.display = customers.length === 0 ? "" : "none";
-  const now = Date.now();
-
-  for (const el of [...wrap.children]) {
-    const id = Number(el.dataset.id);
-    if (!customers.some(c => c.id === id) && !el.classList.contains("leaving")) {
-      el.classList.add("leaving");
-      setTimeout(() => el.remove(), 400);
-    }
-  }
-
-  for (const cust of customers) {
-    let el = wrap.querySelector(`[data-id="${cust.id}"]`);
-    const c = CROPS[cust.crop];
-    if (!el) {
-      el = document.createElement("div");
-      el.className = "customer";
-      el.dataset.id = cust.id;
-      el.innerHTML = `
-        <span class="face">${cust.face}</span>
-        <span class="wants">wants <b>${cust.qty}× ${c.emoji} ${c.name}</b><br>pays <b>$${c.sell * cust.qty}</b></span>
-        <button class="sell-btn">Sell</button>
-        <div class="patience"></div>`;
-      el.querySelector(".sell-btn").onclick = (ev) => serve(cust.id, ev);
-      wrap.appendChild(el);
-    }
-    const left = Math.max(0, 1 - (now - cust.arrivedAt) / PATIENCE_MS);
-    const bar = el.querySelector(".patience");
-    bar.style.width = (left * 100) + "%";
-    bar.style.background = left < 0.3 ? "#ef5350" : left < 0.6 ? "#ffa726" : "#66bb6a";
-    el.querySelector(".sell-btn").disabled = (state.barn[cust.crop] || 0) < cust.qty;
-  }
 }
 
 function renderAll() {
   renderHeader();
   renderSeeds();
   updateField();
-  renderQueue();
+  renderCustomers();
 }
 
 // ---------------- Actions ----------------
@@ -1098,26 +1168,31 @@ function chopAt(i) {
   save();
   renderHeader();
   updateField();
-  renderQueue();
+  renderCustomers();
 }
 
-function serve(id, ev) {
+function serve(id) {
   const idx = customers.findIndex(c => c.id === id);
   if (idx === -1) return;
   const cust = customers[idx];
   const c = CROPS[cust.crop];
-  if ((state.barn[cust.crop] || 0) < cust.qty) { sndNope(); return; }
+  if ((state.barn[cust.crop] || 0) < cust.qty) {
+    sndNope();
+    toast(`${cust.face} wants ${cust.qty}× ${c.emoji} — you don't have enough yet!`);
+    return;
+  }
   const total = c.sell * cust.qty;
   state.barn[cust.crop] -= cust.qty;
   state.money += total;
   customers.splice(idx, 1);
   sndSell();
   popMoney();
-  floater(`+$${total}`, ev.clientX, ev.clientY, "#f9a825");
+  sceneFloater(`+$${total}`, cust.px, cust.py - 8, "#f9a825");
   toast(`${cust.face} "Thank you!" +$${total}`);
+  lastNear = "?";
   save();
   renderHeader();
-  renderQueue();
+  renderCustomers();
 }
 
 function buyLand() {
@@ -1143,7 +1218,7 @@ function buyLand() {
   updateField();
 }
 
-// ---------------- Customers ----------------
+// ---------------- Customer arrivals ----------------
 function scheduleNextCustomer() {
   nextCustomerAt = Date.now() + 9000 + Math.random() * 11000;
 }
@@ -1164,6 +1239,7 @@ function spawnCustomer() {
     crop,
     qty,
     arrivedAt: Date.now(),
+    px: 106, py: 99,         // walks in from the bottom-right corner
   });
 }
 
@@ -1197,15 +1273,16 @@ function tick() {
   }
 
   updateField();
-  renderQueue();
+  renderCustomers();
 }
 
-// farmer movement runs at full frame rate
+// farmer + customers move at full frame rate
 let lastFrame = performance.now();
 function frame(t) {
   const dt = Math.min(0.05, (t - lastFrame) / 1000);
   lastFrame = t;
   updateFarmer(dt);
+  moveCustomers(dt);
   requestAnimationFrame(frame);
 }
 
@@ -1231,13 +1308,13 @@ window.addEventListener("keyup", (e) => {
 });
 window.addEventListener("blur", () => farmer.keys.clear());
 
-// touch joystick: press anywhere on the left of the scene and drag your thumb
+// touch joystick: press anywhere on the scene (not a button/customer) and drag
 const sceneEl = $("scene");
 const stickEl = $("stick");
 const knobEl = $("knob");
 
 sceneEl.addEventListener("touchstart", (e) => {
-  if (e.target.closest(".action-btn")) return;
+  if (e.target.closest(".action-btn, .cust")) return;
   const r = sceneEl.getBoundingClientRect();
   for (const t of e.changedTouches) {
     if (farmer.joy === null) {
@@ -1283,7 +1360,7 @@ sceneEl.addEventListener("touchcancel", endJoy);
 
 // tap/click the grass to walk there
 sceneEl.addEventListener("click", (e) => {
-  if (e.target.closest(".action-btn, .spot")) return;
+  if (e.target.closest(".action-btn, .spot, .cust")) return;
   const r = sceneEl.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width * 100;
   const y = (e.clientY - r.top) / r.height * 100;
@@ -1298,6 +1375,8 @@ $("reset").onclick = () => {
   if (confirm("Start a brand new farm? Your progress will be lost.")) {
     localStorage.removeItem(SAVE_KEY);
     state = freshState();
+    for (const [, ce] of custEls) ce.el.remove();
+    custEls.clear();
     customers = [];
     selectedSeed = "wheat";
     for (const s of spotEls) { s.sig = ""; s.plantbox.innerHTML = ""; s.plantEl = null; }
@@ -1312,7 +1391,7 @@ state = load() || freshState();
 buildField();
 scheduleNextCustomer();
 renderAll();
-toast("🌾 Welcome! Walk to your field, plant seeds, and chop your crops when they're tall.");
+toast("🌾 Welcome! Grow crops, chop them down, and sell to the folks at your stand.");
 setInterval(tick, 400);
 requestAnimationFrame(frame);
 </script>
