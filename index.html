@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 Tiny Farm</title>
+<style>
+  :root {
+    --wood: #8b5a2b;
+    --wood-dark: #6b4423;
+    --soil: #7a5230;
+    --soil-dark: #5e3f24;
+    --grass: #7cb342;
+    --panel: #fff8ec;
+    --ink: #3d2c1e;
+    --gold: #f2b705;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
+    background: linear-gradient(180deg, #aee1f9 0%, #d4ecc3 45%, #9ccc65 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 12px;
+  }
+
+  .game {
+    max-width: 1050px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    background: var(--panel);
+    border: 4px solid var(--wood);
+    border-radius: 16px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 0 var(--wood-dark);
+  }
+  header h1 { font-size: 1.4rem; }
+  .money {
+    font-size: 1.3rem;
+    font-weight: bold;
+    background: #fff3c4;
+    border: 2px solid var(--gold);
+    border-radius: 999px;
+    padding: 4px 14px;
+    transition: transform 0.15s;
+  }
+  .money.pop { transform: scale(1.25); }
+  .barn {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-left: auto;
+    font-size: 1rem;
+  }
+  .barn .item {
+    background: #f1e3c8;
+    border: 2px solid var(--wood);
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+
+  /* ---------- Layout ---------- */
+  .main {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .farm-side { flex: 1 1 520px; display: flex; flex-direction: column; gap: 12px; }
+  .queue-side { flex: 1 1 280px; min-width: 260px; }
+
+  /* ---------- Seed shop ---------- */
+  .shop {
+    background: var(--panel);
+    border: 4px solid var(--wood);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 0 var(--wood-dark);
+  }
+  .shop h2, .queue-panel h2 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .seeds { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seed-btn {
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: #e8f5d0;
+    border: 3px solid #a3c076;
+    border-radius: 12px;
+    padding: 6px 10px;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.3;
+    transition: transform 0.1s;
+  }
+  .seed-btn:hover { transform: translateY(-2px); }
+  .seed-btn.selected {
+    border-color: var(--gold);
+    background: #fff3c4;
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .seed-btn.locked {
+    filter: grayscale(1);
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .seed-btn .big { font-size: 1.5rem; display: block; }
+  .seed-btn small { display: block; color: #6d5b45; }
+
+  /* ---------- Farm grid ---------- */
+  .farm {
+    background: #91b556;
+    border: 6px solid var(--wood);
+    border-radius: 18px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    box-shadow: 0 6px 0 var(--wood-dark);
+  }
+  .plot {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    font-size: clamp(1.4rem, 4.5vw, 2.4rem);
+    transition: transform 0.1s;
+  }
+  .plot:hover { transform: scale(1.05); }
+  .plot.soil {
+    background: repeating-linear-gradient(0deg, var(--soil) 0 12px, var(--soil-dark) 12px 14px);
+    border: 3px solid var(--soil-dark);
+  }
+  .plot.locked {
+    background: #6f9143;
+    border: 3px dashed #4e6b2d;
+    font-size: 1rem;
+    color: #f4ffe0;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .plot.locked .lock { font-size: 1.4rem; }
+  .plot.ready { animation: bounce 0.8s infinite alternate ease-in-out; }
+  .plot.ready::after {
+    content: "✨";
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 0.9rem;
+  }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+  .growbar {
+    position: absolute;
+    bottom: 6px;
+    left: 10%;
+    width: 80%;
+    height: 6px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .growbar span {
+    display: block;
+    height: 100%;
+    background: #aeea00;
+    border-radius: 3px;
+  }
+
+  /* ---------- Customer queue ---------- */
+  .queue-panel {
+    background: var(--panel);
+    border: 4px solid var(--wood);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 0 var(--wood-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 320px;
+  }
+  .stall {
+    text-align: center;
+    font-size: 1.6rem;
+    background: repeating-linear-gradient(90deg, #e53935 0 22px, #fff 22px 44px);
+    border-radius: 10px 10px 4px 4px;
+    padding: 2px 0;
+    border: 2px solid var(--wood-dark);
+  }
+  .customer {
+    background: #fdf1dc;
+    border: 3px solid #d9b98c;
+    border-radius: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: walkin 0.4s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+  @keyframes walkin { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+  .customer.leaving { transition: all 0.4s; opacity: 0; transform: translateX(-40px); }
+  .customer .face { font-size: 2rem; }
+  .customer .wants { flex: 1; line-height: 1.35; font-size: 0.95rem; }
+  .customer .wants b { font-size: 1.05rem; }
+  .patience {
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 4px;
+    background: #66bb6a;
+    transition: width 0.5s linear, background 0.5s;
+  }
+  .sell-btn {
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: bold;
+    background: #ffd54f;
+    border: 3px solid #c79a00;
+    border-radius: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .sell-btn:disabled {
+    background: #e0e0e0;
+    border-color: #aaa;
+    color: #888;
+    cursor: not-allowed;
+  }
+  .sell-btn:not(:disabled):hover { transform: scale(1.06); }
+  .empty-queue {
+    text-align: center;
+    color: #9b8264;
+    font-style: italic;
+    padding: 20px 6px;
+  }
+
+  /* ---------- Toasts & floaters ---------- */
+  #toasts {
+    position: fixed;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 50;
+    pointer-events: none;
+  }
+  .toast {
+    background: rgba(61,44,30,0.92);
+    color: #fff8ec;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    animation: toastin 0.25s ease-out;
+  }
+  @keyframes toastin { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+  .floater {
+    position: fixed;
+    font-weight: bold;
+    font-size: 1.1rem;
+    pointer-events: none;
+    z-index: 60;
+    animation: floatup 1s ease-out forwards;
+  }
+  @keyframes floatup { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-46px); } }
+
+  footer { text-align: center; font-size: 0.85rem; color: #5d4c38; padding-bottom: 8px; }
+  footer button {
+    font-family: inherit;
+    background: none;
+    border: none;
+    color: #8a6d4a;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>🌾 Tiny Farm</h1>
+    <div class="money" id="money">$0</div>
+    <div class="barn" id="barn"></div>
+  </header>
+
+  <div class="main">
+    <div class="farm-side">
+      <div class="shop">
+        <h2>🛒 Seeds — pick one, then tap an empty plot to plant</h2>
+        <div class="seeds" id="seeds"></div>
+      </div>
+      <div class="farm" id="farm"></div>
+    </div>
+
+    <div class="queue-side">
+      <div class="queue-panel">
+        <div class="stall">🧺 FARM STAND 🧺</div>
+        <h2>👥 Customer queue</h2>
+        <div id="queue"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Harvest crops ✨ and sell them to customers to earn money for more land!
+    &nbsp;·&nbsp; <button id="reset">Start over</button>
+  </footer>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+"use strict";
+
+// ---------------- Crop definitions ----------------
+// unlockPlots: how many plots you must own before this seed appears in the shop
+const CROPS = {
+  wheat:      { name: "Wheat",      emoji: "🌾", cost: 2,  growMs: 15000,  sell: 5,   unlockPlots: 0  },
+  carrot:     { name: "Carrot",     emoji: "🥕", cost: 5,  growMs: 30000,  sell: 12,  unlockPlots: 0  },
+  tomato:     { name: "Tomato",     emoji: "🍅", cost: 12, growMs: 50000,  sell: 26,  unlockPlots: 6  },
+  corn:       { name: "Corn",       emoji: "🌽", cost: 20, growMs: 75000,  sell: 45,  unlockPlots: 9  },
+  pumpkin:    { name: "Pumpkin",    emoji: "🎃", cost: 35, growMs: 110000, sell: 80,  unlockPlots: 12 },
+  strawberry: { name: "Strawberry", emoji: "🍓", cost: 60, growMs: 150000, sell: 140, unlockPlots: 16 },
+};
+
+const GRID = 25;             // 5x5 field
+const START_PLOTS = 4;
+const START_MONEY = 15;
+const MAX_QUEUE = 4;
+const PATIENCE_MS = 90000;
+const FACES = ["👩‍🌾","👨","🧑‍🦰","👵","👴","🧒","👱‍♀️","🧔","👩‍🦱","🧓"];
+
+// ---------------- State ----------------
+let state = null;
+let customers = [];          // { id, face, crop, qty, arrivedAt }
+let selectedSeed = "wheat";
+let nextCustomerAt = 0;
+let customerId = 0;
+
+function freshState() {
+  return {
+    money: START_MONEY,
+    plotsOwned: START_PLOTS,
+    // each plot: null (empty soil) or { crop, plantedAt }
+    plots: Array.from({ length: GRID }, () => null),
+    barn: {},                // harvested crops: { wheat: 3, ... }
+  };
+}
+
+function landPrice() {
+  return Math.round(20 * Math.pow(1.45, state.plotsOwned - START_PLOTS));
+}
+
+// ---------------- Save / load ----------------
+const SAVE_KEY = "tiny-farm-save";
+function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && typeof s.money === "number" && Array.isArray(s.plots)) return s;
+    }
+  } catch (e) { /* corrupted save — start fresh */ }
+  return null;
+}
+
+// ---------------- Tiny sounds ----------------
+let audioCtx = null;
+function blip(freq, dur = 0.08, type = "square", vol = 0.04) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.value = vol;
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + dur);
+  } catch (e) { /* no audio available */ }
+}
+const sndPlant   = () => blip(330, 0.07);
+const sndHarvest = () => { blip(520, 0.06); setTimeout(() => blip(660, 0.08), 60); };
+const sndSell    = () => { blip(660, 0.06); setTimeout(() => blip(880, 0.1), 70); };
+const sndBuy     = () => blip(440, 0.12, "triangle");
+const sndNope    = () => blip(140, 0.15, "sawtooth");
+
+// ---------------- UI helpers ----------------
+const $ = (id) => document.getElementById(id);
+
+function toast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  $("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+function floater(text, x, y, color = "#2e7d32") {
+  const el = document.createElement("div");
+  el.className = "floater";
+  el.textContent = text;
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  el.style.color = color;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function popMoney() {
+  const el = $("money");
+  el.classList.remove("pop");
+  void el.offsetWidth;
+  el.classList.add("pop");
+}
+
+function unlockedCrops() {
+  return Object.keys(CROPS).filter(k => state.plotsOwned >= CROPS[k].unlockPlots);
+}
+
+// ---------------- Rendering ----------------
+function renderHeader() {
+  $("money").textContent = "$" + state.money;
+  const barn = $("barn");
+  barn.innerHTML = "";
+  const entries = Object.entries(state.barn).filter(([, n]) => n > 0);
+  if (entries.length === 0) {
+    barn.innerHTML = '<span class="item">🧺 barn is empty</span>';
+  } else {
+    for (const [crop, n] of entries) {
+      const d = document.createElement("span");
+      d.className = "item";
+      d.textContent = `${CROPS[crop].emoji} ×${n}`;
+      barn.appendChild(d);
+    }
+  }
+}
+
+function renderSeeds() {
+  const wrap = $("seeds");
+  wrap.innerHTML = "";
+  for (const [key, c] of Object.entries(CROPS)) {
+    const locked = state.plotsOwned < c.unlockPlots;
+    const btn = document.createElement("button");
+    btn.className = "seed-btn" + (key === selectedSeed ? " selected" : "") + (locked ? " locked" : "");
+    btn.innerHTML = locked
+      ? `<span class="big">🔒</span>${c.name}<small>${c.unlockPlots} plots to unlock</small>`
+      : `<span class="big">${c.emoji}</span>${c.name}<small>plant $${c.cost} · sells $${c.sell}</small>`;
+    btn.onclick = () => {
+      if (locked) { sndNope(); toast(`Own ${c.unlockPlots} plots to unlock ${c.name}!`); return; }
+      selectedSeed = key;
+      renderSeeds();
+    };
+    wrap.appendChild(btn);
+  }
+}
+
+function renderFarm() {
+  const farm = $("farm");
+  farm.innerHTML = "";
+  const now = Date.now();
+  for (let i = 0; i < GRID; i++) {
+    const el = document.createElement("div");
+    if (i >= state.plotsOwned) {
+      el.className = "plot locked";
+      if (i === state.plotsOwned) {
+        el.innerHTML = `<span class="lock">🔒</span>Buy plot<br><b>$${landPrice()}</b>`;
+        el.onclick = (ev) => buyLand(ev);
+      } else {
+        el.innerHTML = `<span class="lock">🌳</span>`;
+      }
+    } else {
+      el.className = "plot soil";
+      const p = state.plots[i];
+      if (!p) {
+        el.onclick = (ev) => plant(i, ev);
+      } else {
+        const c = CROPS[p.crop];
+        const prog = Math.min(1, (now - p.plantedAt) / c.growMs);
+        if (prog >= 1) {
+          el.classList.add("ready");
+          el.textContent = c.emoji;
+          el.onclick = (ev) => harvest(i, ev);
+        } else {
+          el.textContent = prog < 0.5 ? "🌱" : "🌿";
+          el.innerHTML += `<div class="growbar"><span style="width:${Math.round(prog * 100)}%"></span></div>`;
+        }
+      }
+    }
+    farm.appendChild(el);
+  }
+}
+
+function renderQueue() {
+  const wrap = $("queue");
+  wrap.innerHTML = "";
+  if (customers.length === 0) {
+    wrap.innerHTML = '<div class="empty-queue">No customers yet…<br>they\'ll wander over soon! 🚶</div>';
+    return;
+  }
+  const now = Date.now();
+  for (const cust of customers) {
+    const c = CROPS[cust.crop];
+    const total = c.sell * cust.qty;
+    const left = Math.max(0, 1 - (now - cust.arrivedAt) / PATIENCE_MS);
+    const have = state.barn[cust.crop] || 0;
+    const el = document.createElement("div");
+    el.className = "customer";
+    el.dataset.id = cust.id;
+    el.innerHTML = `
+      <span class="face">${cust.face}</span>
+      <span class="wants">wants <b>${cust.qty}× ${c.emoji} ${c.name}</b><br>pays <b>$${total}</b></span>
+      <button class="sell-btn" ${have >= cust.qty ? "" : "disabled"}>Sell</button>
+      <div class="patience" style="width:${left * 100}%; background:${left < 0.3 ? "#ef5350" : left < 0.6 ? "#ffa726" : "#66bb6a"}"></div>
+    `;
+    el.querySelector(".sell-btn").onclick = (ev) => serve(cust.id, ev);
+    wrap.appendChild(el);
+  }
+}
+
+function renderAll() {
+  renderHeader();
+  renderSeeds();
+  renderFarm();
+  renderQueue();
+}
+
+// ---------------- Actions ----------------
+function plant(i, ev) {
+  const c = CROPS[selectedSeed];
+  if (state.plotsOwned < c.unlockPlots) return;
+  if (state.money < c.cost) {
+    sndNope();
+    toast(`Need $${c.cost} to plant ${c.name}!`);
+    return;
+  }
+  state.money -= c.cost;
+  state.plots[i] = { crop: selectedSeed, plantedAt: Date.now() };
+  sndPlant();
+  floater(`-$${c.cost}`, ev.clientX, ev.clientY, "#c62828");
+  save();
+  renderHeader();
+  renderFarm();
+}
+
+function harvest(i, ev) {
+  const p = state.plots[i];
+  if (!p) return;
+  const c = CROPS[p.crop];
+  if (Date.now() - p.plantedAt < c.growMs) return;
+  state.plots[i] = null;
+  state.barn[p.crop] = (state.barn[p.crop] || 0) + 1;
+  sndHarvest();
+  floater(`+1 ${c.emoji}`, ev.clientX, ev.clientY);
+  save();
+  renderAll();
+}
+
+function serve(id, ev) {
+  const idx = customers.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const cust = customers[idx];
+  const c = CROPS[cust.crop];
+  const have = state.barn[cust.crop] || 0;
+  if (have < cust.qty) { sndNope(); return; }
+  const total = c.sell * cust.qty;
+  state.barn[cust.crop] -= cust.qty;
+  state.money += total;
+  customers.splice(idx, 1);
+  sndSell();
+  popMoney();
+  floater(`+$${total}`, ev.clientX, ev.clientY, "#f9a825");
+  toast(`${cust.face} "Thank you!" +$${total}`);
+  save();
+  renderAll();
+}
+
+function buyLand(ev) {
+  const price = landPrice();
+  if (state.money < price) {
+    sndNope();
+    toast(`Need $${price} for more land!`);
+    return;
+  }
+  state.money -= price;
+  state.plotsOwned++;
+  sndBuy();
+  floater(`-$${price}`, ev.clientX, ev.clientY, "#c62828");
+  toast(`🎉 New plot! You now own ${state.plotsOwned} plots.`);
+  // check for newly unlocked crops
+  for (const [key, c] of Object.entries(CROPS)) {
+    if (c.unlockPlots === state.plotsOwned) {
+      toast(`🌟 New seed unlocked: ${c.emoji} ${c.name}!`);
+    }
+  }
+  save();
+  renderAll();
+}
+
+// ---------------- Customers ----------------
+function scheduleNextCustomer() {
+  nextCustomerAt = Date.now() + 9000 + Math.random() * 11000;
+}
+
+function spawnCustomer() {
+  const options = unlockedCrops();
+  // customers prefer cheaper crops so early game stays winnable
+  const weighted = [];
+  options.forEach((k, idx) => {
+    const weight = Math.max(1, options.length - idx);
+    for (let j = 0; j < weight; j++) weighted.push(k);
+  });
+  const crop = weighted[Math.floor(Math.random() * weighted.length)];
+  const qty = 1 + Math.floor(Math.random() * 3);
+  customers.push({
+    id: ++customerId,
+    face: FACES[Math.floor(Math.random() * FACES.length)],
+    crop,
+    qty,
+    arrivedAt: Date.now(),
+  });
+  renderQueue();
+}
+
+// ---------------- Game loop ----------------
+function tick() {
+  const now = Date.now();
+
+  // customer arrivals
+  if (customers.length < MAX_QUEUE && now >= nextCustomerAt) {
+    spawnCustomer();
+    scheduleNextCustomer();
+  }
+
+  // impatient customers leave
+  const before = customers.length;
+  customers = customers.filter(c => {
+    if (now - c.arrivedAt > PATIENCE_MS) {
+      toast(`${c.face} got tired of waiting and left…`);
+      return false;
+    }
+    return true;
+  });
+
+  // rescue: if totally broke with nothing growing and nothing in the barn,
+  // grandma slips you a few dollars so the game can't get stuck
+  const cheapest = Math.min(...Object.values(CROPS).map(c => c.cost));
+  const growing = state.plots.some(p => p);
+  const stored = Object.values(state.barn).some(n => n > 0);
+  if (state.money < cheapest && !growing && !stored) {
+    state.money += 5;
+    toast("👵 Grandma slips you $5. \"Go plant something, dear!\"");
+    save();
+  }
+
+  renderHeader();
+  renderFarm();
+  renderQueue();
+}
+
+// ---------------- Boot ----------------
+$("reset").onclick = () => {
+  if (confirm("Start a brand new farm? Your progress will be lost.")) {
+    localStorage.removeItem(SAVE_KEY);
+    state = freshState();
+    customers = [];
+    selectedSeed = "wheat";
+    scheduleNextCustomer();
+    renderAll();
+    toast("🌅 A fresh start on a tiny farm!");
+  }
+};
+
+state = load() || freshState();
+scheduleNextCustomer();
+renderAll();
+toast("🌾 Welcome to your tiny farm! Plant some wheat to begin.");
+setInterval(tick, 500);
+</script>
+</body>
+</html>
