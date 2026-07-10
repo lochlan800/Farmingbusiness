@@ -350,6 +350,14 @@
     animation: twinkle 1s ease-in-out infinite alternate;
   }
   @keyframes twinkle { from { opacity: 0.4; transform: scale(0.8); } to { opacity: 1; transform: scale(1.15); } }
+  /* rare and better crops glow when ready to harvest */
+  .spot.ready.r-rare .plantbox      { filter: drop-shadow(0 0 5px rgba(66,165,245,0.75)); }
+  .spot.ready.r-epic .plantbox      { filter: drop-shadow(0 0 6px rgba(192,92,224,0.85)); }
+  .spot.ready.r-legendary .plantbox { filter: drop-shadow(0 0 8px rgba(255,179,0,0.95)); animation: legendGlow 1.4s ease-in-out infinite alternate; }
+  @keyframes legendGlow {
+    from { filter: drop-shadow(0 0 5px rgba(255,179,0,0.7)); }
+    to   { filter: drop-shadow(0 0 11px rgba(255,200,40,1)); }
+  }
 
   /* crop falling when chopped */
   .chopped {
@@ -449,10 +457,11 @@
     border-radius: 50%;
   }
   .bubble {
+    --bcol: #cfa76f;       /* border tinted by the rarity of what they want */
     position: absolute; bottom: calc(100% + 8px); right: -6px;
     background: linear-gradient(180deg, #ffffff, #fdf6e8);
     color: var(--ink);
-    border: 2px solid #cfa76f; border-radius: 12px;
+    border: 2px solid var(--bcol); border-radius: 12px;
     padding: 5px 9px 7px;
     font-size: 14px; line-height: 1.25; white-space: nowrap;
     box-shadow: 0 4px 8px rgba(60,35,10,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
@@ -462,7 +471,7 @@
   .bubble::after {
     content: ""; position: absolute; bottom: -8px; right: 18px;
     width: 12px; height: 12px; background: #fdf6e8;
-    border-right: 2px solid #cfa76f; border-bottom: 2px solid #cfa76f;
+    border-right: 2px solid var(--bcol); border-bottom: 2px solid var(--bcol);
     transform: rotate(45deg) skew(12deg, 12deg);
   }
   .cust.can-sell .bubble {
@@ -518,7 +527,7 @@
     align-items: center;
     gap: 10px;
   }
-  .seeds { display: flex; gap: 6px; flex-wrap: nowrap; }
+  .seeds { display: flex; gap: 6px; flex-wrap: wrap; }
   .seed-btn, .land-btn {
     font-family: inherit; font-size: 0.72rem; color: var(--ink);
     background: linear-gradient(180deg, #fffdf2, #f7ecce 45%, #ecd9ab);
@@ -739,16 +748,31 @@
 <script>
 "use strict";
 
+// ---------------- Rarity tiers ----------------
+const RARITIES = {
+  common:    { label: "Common",    color: "#a8a8a8" },
+  uncommon:  { label: "Uncommon",  color: "#58c95e" },
+  rare:      { label: "Rare",      color: "#42a5f5" },
+  epic:      { label: "Epic",      color: "#c05ce0" },
+  legendary: { label: "Legendary", color: "#ffb300" },
+};
+
 // ---------------- Crop definitions ----------------
 // unlockPlots: how many plots you must own before this seed appears in the shop
 // chops: how many axe swings to harvest — big crops take more
 const CROPS = {
-  wheat:      { name: "Wheat",      emoji: "🌾", cost: 2,  growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1 },
-  carrot:     { name: "Carrot",     emoji: "🥕", cost: 5,  growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1 },
-  tomato:     { name: "Tomato",     emoji: "🍅", cost: 12, growMs: 50000,  sell: 26,  unlockPlots: 6,  chops: 2 },
-  corn:       { name: "Corn",       emoji: "🌽", cost: 20, growMs: 75000,  sell: 45,  unlockPlots: 9,  chops: 2 },
-  pumpkin:    { name: "Pumpkin",    emoji: "🎃", cost: 35, growMs: 110000, sell: 80,  unlockPlots: 12, chops: 3 },
-  strawberry: { name: "Strawberry", emoji: "🍓", cost: 60, growMs: 150000, sell: 140, unlockPlots: 16, chops: 2 },
+  wheat:      { name: "Wheat",      emoji: "🌾", rarity: "common",    cost: 2,   growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1 },
+  carrot:     { name: "Carrot",     emoji: "🥕", rarity: "common",    cost: 5,   growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1 },
+  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 40000,  sell: 18,  unlockPlots: 5,  chops: 1 },
+  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 50000,  sell: 26,  unlockPlots: 7,  chops: 2 },
+  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 75000,  sell: 45,  unlockPlots: 9,  chops: 2 },
+  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 85000,  sell: 56,  unlockPlots: 11, chops: 2 },
+  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 110000, sell: 80,  unlockPlots: 13, chops: 3 },
+  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 150000, sell: 140, unlockPlots: 15, chops: 2 },
+  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 170000, sell: 185, unlockPlots: 17, chops: 3 },
+  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 200000, sell: 260, unlockPlots: 19, chops: 2 },
+  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 230000, sell: 360, unlockPlots: 21, chops: 2 },
+  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 300000, sell: 650, unlockPlots: 23, chops: 3 },
 };
 
 // how each crop LOOKS as a living plant: w/h = full-grown size (px, front row),
@@ -791,6 +815,43 @@ const PLANTS = {
     stems: [],
     balls: [[28,18,20],[54,28,22],[74,14,18]],
     fruit: { e: "🍓", size: 17, x: 46, bottom: 26 },
+  },
+  potato: {
+    w: 34, h: 24,
+    stems: [[8,3,-18,0.9],[15,3,0,1],[22,3,16,0.85]],
+    balls: [[32,40,14],[60,32,13]],
+    fruit: { e: "🥔", size: 17, x: 50, bottom: -10 },
+  },
+  chili: {
+    w: 30, h: 44,
+    stems: [[13,4,0,1]],
+    balls: [[38,52,16],[58,36,13],[30,28,12]],
+    fruit: { e: "🌶️", size: 17, x: 62, bottom: 26 },
+  },
+  watermelon: {
+    w: 56, h: 26,
+    stems: [[16,4,-16,0.85],[24,4,10,1]],
+    balls: [[28,40,16],[50,30,14]],
+    fruit: { e: "🍉", size: 32, x: 74, bottom: -6 },
+  },
+  grapes: {
+    w: 36, h: 56,
+    stems: [[16,5,0,1]], stake: true,
+    balls: [[34,66,18],[58,54,16],[42,42,14]],
+    fruit: { e: "🍇", size: 22, x: 46, bottom: 26 },
+  },
+  sunflower: {
+    w: 30, h: 78,
+    stems: [[13,5,0,1]],
+    cornleaves: [[0.32,-1],[0.5,1]],
+    balls: [],
+    fruit: { e: "🌻", size: 30, x: 50, bottom: 60 },
+  },
+  starfruit: {
+    w: 34, h: 40,
+    stems: [[15,4,-6,1],[19,4,8,0.9]],
+    balls: [[36,46,15],[56,34,14]],
+    fruit: { e: "⭐", size: 22, x: 48, bottom: 32 },
   },
 };
 
@@ -1021,7 +1082,7 @@ function updateField() {
         crop = p.crop;
         const c = CROPS[crop];
         prog = Math.min(1, (now - p.plantedAt) / c.growMs);
-        if (prog >= 1) { sig = "ready:" + crop; cls += " ready"; }
+        if (prog >= 1) { sig = "ready:" + crop; cls += " ready r-" + c.rarity; }
         else { sig = "grow:" + crop; cls += " growing"; barPct = Math.round(prog * 100); }
       }
     }
@@ -1210,7 +1271,7 @@ function buildCustomerEl(cust) {
   el.className = "cust moving";
   el.innerHTML = `
     <div class="cin">
-      <div class="bubble">${cust.qty}× ${c.emoji} <b>$${c.sell * cust.qty}</b><span class="pbar"><span></span></span></div>
+      <div class="bubble" style="--bcol:${RARITIES[c.rarity].color}">${cust.qty}× ${c.emoji} <b>$${c.sell * cust.qty}</b><span class="pbar"><span></span></span></div>
       <div class="cshadow"></div>
       <div class="cbody">
         <span class="chead">${cust.face}</span>
@@ -1295,12 +1356,18 @@ function renderSeeds() {
   wrap.innerHTML = "";
   for (const [key, c] of Object.entries(CROPS)) {
     const locked = state.plotsOwned < c.unlockPlots;
+    const rar = RARITIES[c.rarity];
     const btn = document.createElement("button");
     btn.className = "seed-btn" + (key === selectedSeed ? " selected" : "") + (locked ? " locked" : "");
-    btn.title = locked ? `${c.name} — own ${c.unlockPlots} plots to unlock` : `${c.name} — plant $${c.cost}, sells $${c.sell}`;
+    btn.title = locked
+      ? `${c.name} (${rar.label}) — own ${c.unlockPlots} plots to unlock`
+      : `${c.name} (${rar.label}) — plant $${c.cost}, sells $${c.sell}`;
     btn.innerHTML = locked
       ? `<span class="big">🔒</span>${c.unlockPlots} plots`
       : `<span class="big">${c.emoji}</span>$${c.cost}`;
+    // rarity shows as the chip's border and a stripe under the price
+    btn.style.borderColor = rar.color;
+    if (!locked) btn.style.boxShadow = `0 2px 0 rgba(90,60,25,0.5), 0 4px 6px rgba(60,35,10,0.2), inset 0 -3px 0 ${rar.color}`;
     btn.onclick = () => {
       if (locked) { sndNope(); toast(`Own ${c.unlockPlots} plots to unlock ${c.name}!`); return; }
       selectedSeed = key;
@@ -1432,7 +1499,7 @@ function buyLand() {
   toast(`🎉 New plot! You now own ${state.plotsOwned} plots.`);
   for (const c of Object.values(CROPS)) {
     if (c.unlockPlots === state.plotsOwned) {
-      toast(`🌟 New seed unlocked: ${c.emoji} ${c.name}!`);
+      toast(`🌟 New ${RARITIES[c.rarity].label.toUpperCase()} seed unlocked: ${c.emoji} ${c.name}!`);
     }
   }
   lastNear = "?";
