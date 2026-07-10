@@ -866,6 +866,7 @@ const farmer = {
   joy: null,               // { id, ox, oy, dx, dy } active touch joystick
 };
 const Y_MIN = 39, Y_MAX = 97;
+const SPEED_X = 40, SPEED_Y = 30;    // walk speed, scene % per second
 
 function farmerScale(y) {
   return 0.55 + (y - Y_MIN) / (Y_MAX - Y_MIN) * 0.5;
@@ -873,7 +874,7 @@ function farmerScale(y) {
 
 // what the farmer could act on right now: nearest mound/crop/weed/customer in reach
 function nearestTarget() {
-  let best = null, bestD = 9.5;      // interaction radius in scene %
+  let best = null, bestD = 13;       // interaction radius in scene % — generous on purpose
   const consider = (x, y, kind, idx) => {
     const d = Math.hypot(farmer.x - x, (farmer.y - y) * 1.5);
     if (d < bestD) { bestD = d; best = { kind, idx, x, y }; }
@@ -968,8 +969,10 @@ function updateFarmer(dt) {
   const moving = mag > 0.01 && now >= farmer.chopUntil;
   if (moving) {
     dx /= mag; dy /= mag;
-    farmer.x += dx * 30 * dt;
-    farmer.y += dy * 22 * dt;
+    // joystick gives analog speed: gentle drags walk, bigger drags run
+    const throttle = farmer.joy ? Math.min(1, mag) : 1;
+    farmer.x += dx * SPEED_X * throttle * dt;
+    farmer.y += dy * SPEED_Y * throttle * dt;
     farmer.x = Math.max(2, Math.min(98, farmer.x));
     farmer.y = Math.max(Y_MIN, Math.min(Y_MAX, farmer.y));
     if (dx > 0.1) farmer.facing = 1;
@@ -1330,18 +1333,34 @@ sceneEl.addEventListener("touchstart", (e) => {
 
 sceneEl.addEventListener("touchmove", (e) => {
   if (!farmer.joy) return;
+  const r = sceneEl.getBoundingClientRect();
   for (const t of e.changedTouches) {
     if (t.identifier === farmer.joy.id) {
       e.preventDefault();
-      const R = 42;
+      const R = 40;          // knob travel
+      const FULL = 22;       // deflection that already counts as full speed
       let dx = t.clientX - farmer.joy.ox;
       let dy = t.clientY - farmer.joy.oy;
-      const m = Math.hypot(dx, dy);
-      if (m > R) { dx = dx / m * R; dy = dy / m * R; }
+      let m = Math.hypot(dx, dy);
+      // floating stick: if the thumb overshoots, the base follows it,
+      // so changing direction never requires dragging all the way back
+      if (m > R) {
+        farmer.joy.ox = t.clientX - dx / m * R;
+        farmer.joy.oy = t.clientY - dy / m * R;
+        dx = dx / m * R; dy = dy / m * R;
+        m = R;
+        stickEl.style.left = (farmer.joy.ox - r.left) + "px";
+        stickEl.style.top = (farmer.joy.oy - r.top) + "px";
+      }
       knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
-      const dead = 6;
-      farmer.joy.dx = Math.abs(dx) > dead ? dx / R : 0;
-      farmer.joy.dy = Math.abs(dy) > dead ? dy / R : 0;
+      const dead = 4;
+      if (m < dead) {
+        farmer.joy.dx = 0; farmer.joy.dy = 0;
+      } else {
+        const speed = Math.min(1, m / FULL);   // full speed on a small drag
+        farmer.joy.dx = dx / m * speed;
+        farmer.joy.dy = dy / m * speed;
+      }
     }
   }
 }, { passive: false });
