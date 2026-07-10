@@ -315,28 +315,20 @@
     color: var(--cream);
   }
 
-  /* buy-land sign */
-  .land-sign {
-    position: absolute; left: 14px; bottom: 12px; z-index: 990;
-    cursor: pointer; text-align: center;
-    filter: drop-shadow(0 4px 3px rgba(0,0,0,0.25));
-    transition: transform 0.12s;
-  }
-  .land-sign:hover { transform: scale(1.06); }
-  .land-sign.near { transform: scale(1.08); }
-  .land-sign.near .board { box-shadow: 0 0 0 3px rgba(255,235,59,0.85); }
-  .land-sign .board {
+  /* buy-land button on the seed shelf */
+  .land-btn {
+    font-family: inherit; font-size: 0.9rem; color: var(--cream);
     background: linear-gradient(180deg, #b07c46, #96662f);
-    border: 3px solid var(--wood-dark);
-    border-radius: 10px;
-    color: var(--cream);
-    padding: 6px 12px;
-    font-size: 0.9rem;
-    line-height: 1.35;
+    border: 3px solid var(--wood-dark); border-radius: 12px;
+    padding: 6px 10px; cursor: pointer; text-align: center; line-height: 1.3;
+    box-shadow: 0 3px 0 rgba(62,38,15,0.7);
+    transition: transform 0.1s;
   }
-  .land-sign .board b { font-size: 1.05rem; color: #ffe082; }
-  .land-sign .post { width: 10px; height: 22px; margin: 0 auto; background: #7a5028; border: 2px solid var(--wood-dark); border-top: none; }
-  .land-sign.sold-out { display: none; }
+  .land-btn:hover { transform: translateY(-2px); }
+  .land-btn .big { font-size: 1.5rem; display: block; }
+  .land-btn b { color: #ffe082; }
+  .land-btn small { display: block; color: #f3dcae; }
+  .land-btn.sold-out { display: none; }
 
   /* ---------- Seed shelf ---------- */
   .shop { padding: 10px 12px; }
@@ -478,11 +470,6 @@
           <div class="fshadow"></div>
           <span class="axe">🪓</span>
           <span class="fbody">🧑‍🌾</span>
-        </div>
-
-        <div class="land-sign" id="landSign">
-          <div class="board">🪧 New plot<br><b id="landPriceTag">$20</b></div>
-          <div class="post"></div>
         </div>
 
         <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
@@ -827,12 +814,14 @@ function updateField() {
     if (barPct >= 0) s.barFill.style.width = barPct + "%";
   }
 
-  const sign = $("landSign");
-  if (state.plotsOwned >= GRID) {
-    sign.classList.add("sold-out");
-  } else {
-    sign.classList.remove("sold-out");
-    $("landPriceTag").textContent = "$" + landPrice();
+  const landBtn = $("landBtn");
+  if (landBtn) {
+    if (state.plotsOwned >= GRID) {
+      landBtn.classList.add("sold-out");
+    } else {
+      landBtn.classList.remove("sold-out");
+      landBtn.querySelector("b").textContent = "$" + landPrice();
+    }
   }
 }
 
@@ -869,7 +858,6 @@ function nearestTarget() {
     if (!p) consider(x, y, "plant", i);
     else if (Date.now() - p.plantedAt >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
   }
-  if (state.plotsOwned < GRID) consider(9, 92, "buy", -1);   // the wooden sign
   return best;
 }
 
@@ -879,7 +867,6 @@ function updateNearHighlight(t) {
   if (key === lastNear) return;
   lastNear = key;
   for (const s of spotEls) s.el.classList.remove("near");
-  $("landSign").classList.remove("near");
   const btn = $("actionBtn");
   if (!t) {
     btn.textContent = "🚶";
@@ -888,8 +875,7 @@ function updateNearHighlight(t) {
   }
   btn.classList.remove("idle");
   btn.textContent = t.kind === "plant" ? CROPS[selectedSeed].emoji : t.kind === "chop" ? "🪓" : "🪧";
-  if (t.idx >= 0) spotEls[t.idx].el.classList.add("near");
-  else $("landSign").classList.add("near");
+  spotEls[t.idx].el.classList.add("near");
 }
 
 function doAction() {
@@ -993,6 +979,13 @@ function renderSeeds() {
     };
     wrap.appendChild(btn);
   }
+  // buy-land button lives on the shelf too, so it never covers the farm
+  const landBtn = document.createElement("button");
+  landBtn.id = "landBtn";
+  landBtn.className = "land-btn" + (state.plotsOwned >= GRID ? " sold-out" : "");
+  landBtn.innerHTML = `<span class="big">🪧</span>New plot <b>$${landPrice()}</b><small>or walk to the weeds</small>`;
+  landBtn.onclick = () => buyLand();
+  wrap.appendChild(landBtn);
 }
 
 // reconcile customer cards in place so their animations don't restart every tick
@@ -1244,7 +1237,7 @@ const stickEl = $("stick");
 const knobEl = $("knob");
 
 sceneEl.addEventListener("touchstart", (e) => {
-  if (e.target.closest(".action-btn, .land-sign")) return;
+  if (e.target.closest(".action-btn")) return;
   const r = sceneEl.getBoundingClientRect();
   for (const t of e.changedTouches) {
     if (farmer.joy === null) {
@@ -1290,7 +1283,7 @@ sceneEl.addEventListener("touchcancel", endJoy);
 
 // tap/click the grass to walk there
 sceneEl.addEventListener("click", (e) => {
-  if (e.target.closest(".action-btn, .land-sign, .spot")) return;
+  if (e.target.closest(".action-btn, .spot")) return;
   const r = sceneEl.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width * 100;
   const y = (e.clientY - r.top) / r.height * 100;
@@ -1299,7 +1292,6 @@ sceneEl.addEventListener("click", (e) => {
 });
 
 $("actionBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doAction(); });
-$("landSign").addEventListener("click", () => buyLand());
 
 // ---------------- Boot ----------------
 $("reset").onclick = () => {
