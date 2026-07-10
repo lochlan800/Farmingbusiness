@@ -282,6 +282,20 @@
     box-shadow: 0 0 0 3px rgba(255,235,59,0.75);
   }
   .spot.locked .mound { display: none; }
+  /* watered soil: dark and damp, with a drop over the plant */
+  .spot.wet .mound {
+    background: radial-gradient(ellipse at 42% 28%,
+      #5d4028 0%, #46311c 38%, #2f2011 60%, rgba(47,32,17,0) 74%);
+  }
+  .spot.wet .sprite::before {
+    content: "💧"; position: absolute; top: -12px; left: 24px; font-size: 12px;
+    animation: dripFade 1.6s ease-in-out infinite;
+  }
+  @keyframes dripFade {
+    0% { opacity: 0; transform: translateY(-4px); }
+    40% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(4px); }
+  }
   .spot.locked.near .weed-glyph { text-shadow: 0 0 8px rgba(255,235,59,0.9); }
   .sprite {
     position: absolute; left: 0; bottom: -4px; width: 110px;
@@ -737,7 +751,7 @@
   <div class="bottombar wood-panel">
     <div class="seeds" id="seeds"></div>
     <div class="hintmini">
-      🕹️ <b>WASD/arrows</b> walk · <b>Space</b> plant/chop/sell<br>
+      🕹️ <b>WASD/arrows</b> walk · <b>Space</b> plant/water/chop/sell<br>
       📱 left thumb = walk, gold button = act · tap a customer to sell
     </div>
   </div>
@@ -760,20 +774,25 @@ const RARITIES = {
 // ---------------- Crop definitions ----------------
 // unlockPlots: how many plots you must own before this seed appears in the shop
 // chops: how many axe swings to harvest — big crops take more
+// grow times scale with rarity: commons are quick, legendaries are a real wait
 const CROPS = {
   wheat:      { name: "Wheat",      emoji: "🌾", rarity: "common",    cost: 2,   growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1 },
   carrot:     { name: "Carrot",     emoji: "🥕", rarity: "common",    cost: 5,   growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1 },
-  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 40000,  sell: 18,  unlockPlots: 5,  chops: 1 },
-  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 50000,  sell: 26,  unlockPlots: 7,  chops: 2 },
-  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 75000,  sell: 45,  unlockPlots: 9,  chops: 2 },
-  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 85000,  sell: 56,  unlockPlots: 11, chops: 2 },
-  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 110000, sell: 80,  unlockPlots: 13, chops: 3 },
-  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 150000, sell: 140, unlockPlots: 15, chops: 2 },
-  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 170000, sell: 185, unlockPlots: 17, chops: 3 },
-  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 200000, sell: 260, unlockPlots: 19, chops: 2 },
-  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 230000, sell: 360, unlockPlots: 21, chops: 2 },
-  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 300000, sell: 650, unlockPlots: 23, chops: 3 },
+  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 45000,  sell: 18,  unlockPlots: 5,  chops: 1 },
+  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 60000,  sell: 26,  unlockPlots: 7,  chops: 2 },
+  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 80000,  sell: 45,  unlockPlots: 9,  chops: 2 },
+  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 100000, sell: 56,  unlockPlots: 11, chops: 2 },
+  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 130000, sell: 80,  unlockPlots: 13, chops: 3 },
+  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 160000, sell: 140, unlockPlots: 15, chops: 2 },
+  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 190000, sell: 185, unlockPlots: 17, chops: 3 },
+  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 240000, sell: 260, unlockPlots: 19, chops: 2 },
+  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 280000, sell: 360, unlockPlots: 21, chops: 2 },
+  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, unlockPlots: 23, chops: 3 },
 };
+
+// the watering can: buy once, then water growing crops to double their speed
+const CAN_PRICE = 40;
+const WATER_MS = 30000;      // one watering keeps a plant wet (2× growth) this long
 
 // how each crop LOOKS as a living plant: w/h = full-grown size (px, front row),
 // stems: [leftPx, widthPx, tiltDeg, heightFrac], balls: leafy clumps [xPct, bottomPct, sizePx],
@@ -891,10 +910,23 @@ function freshState() {
   return {
     money: START_MONEY,
     plotsOwned: START_PLOTS,
-    // each plot: null (empty soil) or { crop, plantedAt, chopsLeft? }
+    // each plot: null (empty soil) or { crop, plantedAt, chopsLeft?, wateredAt?, boost? }
     plots: Array.from({ length: GRID }, () => null),
     barn: {},                // harvested crops: { wheat: 3, ... }
+    can: false,              // owns the watering can?
   };
+}
+
+// effective growing time: real time plus bonus time earned while watered.
+// while a plant is wet it grows at double speed for WATER_MS after each watering.
+function growElapsed(p) {
+  let bonus = p.boost || 0;
+  if (p.wateredAt) bonus += Math.min(Date.now() - p.wateredAt, WATER_MS);
+  return Date.now() - p.plantedAt + bonus;
+}
+
+function isWet(p) {
+  return p.wateredAt && (Date.now() - p.wateredAt < WATER_MS);
 }
 
 function landPrice() {
@@ -1081,9 +1113,14 @@ function updateField() {
       } else {
         crop = p.crop;
         const c = CROPS[crop];
-        prog = Math.min(1, (now - p.plantedAt) / c.growMs);
+        prog = Math.min(1, growElapsed(p) / c.growMs);
         if (prog >= 1) { sig = "ready:" + crop; cls += " ready r-" + c.rarity; }
-        else { sig = "grow:" + crop; cls += " growing"; barPct = Math.round(prog * 100); }
+        else {
+          const wet = isWet(p);
+          sig = "grow:" + crop + (wet ? ":w" : "");
+          cls += " growing" + (wet ? " wet" : "");
+          barPct = Math.round(prog * 100);
+        }
       }
     }
 
@@ -1158,7 +1195,8 @@ function nearestTarget() {
     }
     const p = state.plots[i];
     if (!p) consider(x, y, "plant", i);
-    else if (Date.now() - p.plantedAt >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
+    else if (growElapsed(p) >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
+    else if (state.can && !isWet(p)) consider(x, y, "water", i);
   }
   for (const c of customers) {
     consider(c.px, c.py, "sell", "c" + c.id);
@@ -1183,6 +1221,7 @@ function updateNearHighlight(t) {
   btn.textContent =
     t.kind === "plant" ? CROPS[selectedSeed].emoji :
     t.kind === "chop"  ? "🪓" :
+    t.kind === "water" ? "💧" :
     t.kind === "sell"  ? "💰" : "🪧";
   if (t.kind === "sell") {
     const ce = custEls.get(Number(String(t.idx).slice(1)));
@@ -1198,6 +1237,7 @@ function doAction() {
   if (!t) return;
   if (t.kind === "plant") plantAt(t.idx);
   else if (t.kind === "chop") chopAt(t.idx);
+  else if (t.kind === "water") waterAt(t.idx);
   else if (t.kind === "sell") serve(Number(String(t.idx).slice(1)));
   else buyLand();
 }
@@ -1376,6 +1416,16 @@ function renderSeeds() {
     };
     wrap.appendChild(btn);
   }
+  // the watering can — one-time tool purchase
+  if (!state.can) {
+    const canBtn = document.createElement("button");
+    canBtn.className = "seed-btn";
+    canBtn.style.borderColor = "#42a5f5";
+    canBtn.title = `Watering can — water growing crops so they grow twice as fast for ${WATER_MS / 1000}s`;
+    canBtn.innerHTML = `<span class="big">💧</span>$${CAN_PRICE}`;
+    canBtn.onclick = () => buyCan();
+    wrap.appendChild(canBtn);
+  }
   // buy-land button lives on the shelf too, so it never covers the farm
   const landBtn = document.createElement("button");
   landBtn.id = "landBtn";
@@ -1413,11 +1463,28 @@ function plantAt(i) {
   updateField();
 }
 
+function waterAt(i) {
+  const p = state.plots[i];
+  if (!p || !state.can || isWet(p)) return;
+  const now = Date.now();
+  // bank the bonus from any earlier watering, then start a fresh soak
+  if (p.wateredAt) p.boost = (p.boost || 0) + Math.min(now - p.wateredAt, WATER_MS);
+  p.wateredAt = now;
+  const { x, y } = spotScenePos(i);
+  farmer.facing = x >= farmer.x ? 1 : -1;
+  blip(880, 0.05, "sine", 0.05);
+  setTimeout(() => blip(660, 0.07, "sine", 0.05), 60);
+  sceneFloater("💧", x, y, "#2196f3");
+  lastNear = "?";
+  save();
+  updateField();
+}
+
 function chopAt(i) {
   const p = state.plots[i];
   if (!p) return;
   const c = CROPS[p.crop];
-  if (Date.now() - p.plantedAt < c.growMs) return;
+  if (growElapsed(p) < c.growMs) return;
 
   // face the crop and swing the axe
   const { x, y } = spotScenePos(i);
@@ -1484,6 +1551,23 @@ function serve(id) {
   save();
   renderHeader();
   renderCustomers();
+}
+
+function buyCan() {
+  if (state.can) return;
+  if (state.money < CAN_PRICE) {
+    sndNope();
+    toast(`Need $${CAN_PRICE} for the watering can!`);
+    return;
+  }
+  state.money -= CAN_PRICE;
+  state.can = true;
+  sndBuy();
+  toast("💧 Watering can! Walk to a growing crop and press the button to water it — 2× growth for 30s.");
+  lastNear = "?";
+  save();
+  renderHeader();
+  renderSeeds();
 }
 
 function buyLand() {
