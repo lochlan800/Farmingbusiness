@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🌾 Tiny Farm</title>
 <style>
   :root {
@@ -14,7 +14,7 @@
     --ink: #3d2c1e;
     --gold: #f2b705;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
   html, body { height: 100%; }
   body {
     font-family: "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
@@ -37,34 +37,21 @@
   }
 
   /* ---------- Header ---------- */
-  header {
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
+  header { padding: 10px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
   header h1 { font-size: 1.4rem; text-shadow: 0 2px 0 rgba(0,0,0,0.3); }
   .money {
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: var(--ink);
+    font-size: 1.25rem; font-weight: bold; color: var(--ink);
     background: linear-gradient(180deg, #ffe082, #ffca28);
-    border: 3px solid #b8860b;
-    border-radius: 999px;
-    padding: 4px 16px;
-    box-shadow: 0 3px 0 #8d6708;
+    border: 3px solid #b8860b; border-radius: 999px;
+    padding: 4px 16px; box-shadow: 0 3px 0 #8d6708;
     transition: transform 0.15s;
   }
   .money.pop { transform: scale(1.22); }
   .barn-inv { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
   .barn-inv .item {
-    background: var(--cream);
-    color: var(--ink);
-    border: 2px solid var(--wood-dark);
-    border-radius: 10px;
-    padding: 2px 9px;
-    font-size: 1rem;
+    background: var(--cream); color: var(--ink);
+    border: 2px solid var(--wood-dark); border-radius: 10px;
+    padding: 2px 9px; font-size: 1rem;
     box-shadow: 0 2px 0 rgba(62,38,15,0.6);
   }
 
@@ -74,16 +61,17 @@
   .queue-side { flex: 1 1 280px; min-width: 260px; }
 
   /* ============================================================
-     THE FARM SCENE — one continuous landscape, no tiles
+     THE FARM SCENE — one continuous landscape you walk around in
      ============================================================ */
   .scene {
     position: relative;
-    height: clamp(420px, 58vw, 560px);
+    height: clamp(430px, 60vw, 570px);
     border: 6px solid var(--wood-dark);
     border-radius: 20px;
     overflow: hidden;
     background: linear-gradient(180deg, #7ec8f2 0%, #aadcf7 28%, #d7efff 42%);
     box-shadow: 0 6px 0 rgba(62,38,15,0.8);
+    touch-action: none;
   }
 
   /* sky */
@@ -107,7 +95,7 @@
   .hill.h2 { right: -22%; top: 25%; width: 85%; height: 28%; background: #6da23e; }
   .hill.h3 { left: 28%; top: 30%; width: 66%; height: 20%; background: #82b656; }
 
-  /* the meadow — one continuous ground, gets lighter toward the viewer */
+  /* the meadow */
   .grass {
     position: absolute; left: 0; right: 0; top: 37%; bottom: 0;
     background:
@@ -163,9 +151,10 @@
     transition: top 0.7s ease;
   }
   .fence {
-    position: absolute; left: -1%; right: -1%; bottom: -5%; height: 26px; z-index: 30;
+    position: absolute; left: -1%; right: -1%; bottom: -5%; height: 26px; z-index: 970;
     background: repeating-linear-gradient(90deg, #8b5a2b 0 7px, transparent 7px 48px);
     filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));
+    pointer-events: none;
   }
   .fence::before, .fence::after {
     content: ""; position: absolute; left: 0; right: 0; height: 5px;
@@ -174,7 +163,7 @@
   .fence::before { top: 5px; }
   .fence::after { top: 15px; }
 
-  /* planting spots — invisible anchors over the field, not tiles */
+  /* planting spots — dirt mounds in the field, not tiles */
   .spot { position: absolute; width: 0; height: 0; cursor: pointer; }
   .spot.hidden { display: none; }
   .spot .mound {
@@ -182,44 +171,160 @@
     background: radial-gradient(ellipse at 50% 42%, #5b3a1e 0%, #4a2f18 45%, rgba(74,47,24,0) 72%);
     transition: box-shadow 0.15s;
   }
-  .spot.stage-empty:hover .mound {
+  .spot.near .mound, .spot.stage-empty:hover .mound {
     background: radial-gradient(ellipse at 50% 42%, #6b4523 0%, #543619 45%, rgba(74,47,24,0) 72%);
-    box-shadow: 0 0 0 3px rgba(255,235,59,0.7);
+    box-shadow: 0 0 0 3px rgba(255,235,59,0.75);
   }
   .spot.locked .mound { display: none; }
+  .spot.locked.near .weed-glyph { text-shadow: 0 0 8px rgba(255,235,59,0.9); }
   .sprite {
-    position: absolute; left: 0; bottom: -4px; width: 90px;
+    position: absolute; left: 0; bottom: -4px; width: 110px;
     transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center;
     pointer-events: none;
   }
-  .glyph {
-    line-height: 1.05;
-    transition: font-size 0.4s;
-    filter: drop-shadow(0 3px 2px rgba(0,0,0,0.28));
-  }
-  .stage-ready .glyph { animation: bob 0.8s ease-in-out infinite alternate; }
-  @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-6px); } }
-  .stage-ready .sprite::after {
-    content: "✨"; position: absolute; top: -16px; right: 16px; font-size: 15px;
-    animation: twinkle 1s ease-in-out infinite alternate;
-  }
-  @keyframes twinkle { from { opacity: 0.4; transform: scale(0.8); } to { opacity: 1; transform: scale(1.15); } }
+  .weed-glyph { line-height: 1.05; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.28)); }
   .bar {
     display: none; height: 6px; margin-bottom: 4px;
     background: rgba(0,0,0,0.4); border-radius: 3px; overflow: hidden;
   }
-  .stage-sprout .bar, .stage-mid .bar { display: block; }
+  .spot.growing .bar { display: block; }
   .bar span { display: block; height: 100%; background: #aeea00; border-radius: 3px; }
+
+  /* ------- real growing plants ------- */
+  .plant {
+    position: relative;
+    transform-origin: bottom center;
+    transition: transform 0.45s linear;
+    pointer-events: auto;
+  }
+  .plant .sway { position: absolute; inset: 0; transform-origin: bottom center; }
+  .spot.ready .plant .sway { animation: sway 2.4s ease-in-out infinite alternate; }
+  @keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+  .plant.shake .sway { animation: shake 0.3s ease-in-out; }
+  @keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-7deg) translateX(-2px); }
+    65% { transform: rotate(6deg) translateX(2px); }
+  }
+  .stem {
+    position: absolute; bottom: 0;
+    transform-origin: bottom center;
+    border-radius: 45% 45% 0 0 / 60% 60% 0 0;
+    background: linear-gradient(180deg, #7cb342, #4e7d29);
+    filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));
+  }
+  .plant.ripe-gold .stem { background: linear-gradient(180deg, #eccd6c, #b98e2f); }
+  .stem.stake { background: linear-gradient(180deg, #a97a4a, #7a5228); border-radius: 2px; }
+  .leafball {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle at 35% 32%, #82c853, #4c8a28 72%);
+    filter: drop-shadow(0 2px 1px rgba(0,0,0,0.18));
+  }
+  .cornleaf {
+    position: absolute; bottom: 0;
+    width: 16px; height: 30px;
+    background: #5f9e34;
+    border-radius: 0 100% 0 100%;
+    transform-origin: bottom right;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+  }
+  .cornleaf.flip { border-radius: 100% 0 100% 0; transform-origin: bottom left; }
+  .fruit {
+    position: absolute; transform: translateX(-50%) scale(0);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 3px 2px rgba(0,0,0,0.28));
+    line-height: 1;
+  }
+  .plant.fruited .fruit { transform: translateX(-50%) scale(1); }
+  .spot.ready .sprite::after {
+    content: "✨"; position: absolute; top: -14px; right: 22px; font-size: 15px;
+    animation: twinkle 1s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle { from { opacity: 0.4; transform: scale(0.8); } to { opacity: 1; transform: scale(1.15); } }
+
+  /* crop falling when chopped */
+  .chopped {
+    position: absolute; z-index: 980; pointer-events: none;
+    transform-origin: bottom center; line-height: 1;
+    animation: chopfall 0.65s ease-in forwards;
+    filter: drop-shadow(0 3px 2px rgba(0,0,0,0.3));
+  }
+  @keyframes chopfall {
+    0% { transform: translateX(-50%) rotate(0deg); opacity: 1; }
+    55% { transform: translateX(-50%) rotate(78deg); opacity: 1; }
+    100% { transform: translateX(-50%) rotate(84deg) translateY(6px); opacity: 0; }
+  }
+
+  /* ------- the farmer ------- */
+  #farmer { position: absolute; pointer-events: none; }
+  #farmer .fshadow {
+    position: absolute; left: 50%; bottom: -2px;
+    width: 34px; height: 10px; transform: translateX(-50%);
+    background: radial-gradient(ellipse, rgba(0,0,0,0.28), rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+  }
+  #farmer .fbody {
+    display: block; font-size: 44px; line-height: 1;
+    filter: drop-shadow(0 4px 3px rgba(0,0,0,0.25));
+  }
+  #farmer.walking .fbody { animation: hop 0.28s ease-in-out infinite alternate; }
+  @keyframes hop { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+  #farmer .axe {
+    position: absolute; right: -12px; top: 2px; font-size: 24px;
+    opacity: 0; transform-origin: 20% 85%;
+  }
+  #farmer.chopping .axe { opacity: 1; animation: swing 0.32s ease-in-out; }
+  @keyframes swing {
+    0% { transform: rotate(-95deg); }
+    60% { transform: rotate(28deg); }
+    100% { transform: rotate(10deg); }
+  }
+
+  /* ------- touch controls ------- */
+  .stick {
+    position: absolute; z-index: 1000; display: none;
+    width: 96px; height: 96px; margin: -48px 0 0 -48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 3px solid rgba(255,255,255,0.45);
+    pointer-events: none;
+  }
+  .stick .knob {
+    position: absolute; left: 50%; top: 50%;
+    width: 44px; height: 44px; margin: -22px 0 0 -22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.65);
+    border: 3px solid rgba(120,90,40,0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+  .action-btn {
+    position: absolute; right: 14px; bottom: 14px; z-index: 1001;
+    width: 68px; height: 68px; border-radius: 50%;
+    font-size: 30px; font-family: inherit;
+    background: linear-gradient(180deg, #ffe082, #ffca28);
+    border: 4px solid #b8860b;
+    box-shadow: 0 4px 0 #8d6708, 0 6px 12px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.2s;
+  }
+  .action-btn:active { transform: scale(0.92); }
+  .action-btn.idle { filter: grayscale(0.9) opacity(0.55); }
+  .hint {
+    padding: 6px 12px; font-size: 0.85rem; text-align: center;
+    color: var(--cream);
+  }
 
   /* buy-land sign */
   .land-sign {
-    position: absolute; left: 14px; bottom: 12px; z-index: 40;
+    position: absolute; left: 14px; bottom: 12px; z-index: 990;
     cursor: pointer; text-align: center;
     filter: drop-shadow(0 4px 3px rgba(0,0,0,0.25));
     transition: transform 0.12s;
   }
   .land-sign:hover { transform: scale(1.06); }
+  .land-sign.near { transform: scale(1.08); }
+  .land-sign.near .board { box-shadow: 0 0 0 3px rgba(255,235,59,0.85); }
   .land-sign .board {
     background: linear-gradient(180deg, #b07c46, #96662f);
     border: 3px solid var(--wood-dark);
@@ -300,7 +405,7 @@
   /* ---------- Toasts & floaters ---------- */
   #toasts {
     position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
-    display: flex; flex-direction: column; gap: 6px; z-index: 50; pointer-events: none;
+    display: flex; flex-direction: column; gap: 6px; z-index: 1100; pointer-events: none;
   }
   .toast {
     background: rgba(61,44,30,0.92); color: #fff8ec;
@@ -310,7 +415,7 @@
   @keyframes toastin { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
   .floater {
     position: fixed; font-weight: bold; font-size: 1.1rem;
-    pointer-events: none; z-index: 60;
+    pointer-events: none; z-index: 1200;
     animation: floatup 1s ease-out forwards;
     text-shadow: 0 1px 0 rgba(255,255,255,0.7);
   }
@@ -333,7 +438,7 @@
 
   <div class="main">
     <div class="farm-side">
-      <div class="scene">
+      <div class="scene" id="scene">
         <div class="sun"></div>
         <div class="cloud c1">☁️</div>
         <div class="cloud c2">☁️</div>
@@ -369,14 +474,28 @@
           <div class="fence"></div>
         </div>
 
+        <div id="farmer">
+          <div class="fshadow"></div>
+          <span class="axe">🪓</span>
+          <span class="fbody">🧑‍🌾</span>
+        </div>
+
         <div class="land-sign" id="landSign">
           <div class="board">🪧 New plot<br><b id="landPriceTag">$20</b></div>
           <div class="post"></div>
         </div>
+
+        <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
+        <button class="action-btn idle" id="actionBtn" title="Plant / chop">🚶</button>
+      </div>
+
+      <div class="hint wood-panel">
+        🕹️ Walk with <b>WASD / arrow keys</b> (or drag a thumb on the left of the farm) ·
+        <b>Space</b> or the big button to plant &amp; chop 🪓
       </div>
 
       <div class="shop wood-panel">
-        <h2>🛒 Seeds — pick one, then tap a patch of soil to plant</h2>
+        <h2>🛒 Seeds — pick one, then walk to a dirt mound and plant</h2>
         <div class="seeds" id="seeds"></div>
       </div>
     </div>
@@ -392,7 +511,7 @@
   </div>
 
   <footer>
-    Harvest crops ✨ and sell them to customers to earn money for more land!
+    Grow crops tall, chop them down ✨ and sell them to customers to buy more land!
     &nbsp;·&nbsp; <button id="reset">Start over</button>
   </footer>
 </div>
@@ -404,13 +523,57 @@
 
 // ---------------- Crop definitions ----------------
 // unlockPlots: how many plots you must own before this seed appears in the shop
+// chops: how many axe swings to harvest — big crops take more
 const CROPS = {
-  wheat:      { name: "Wheat",      emoji: "🌾", cost: 2,  growMs: 15000,  sell: 5,   unlockPlots: 0  },
-  carrot:     { name: "Carrot",     emoji: "🥕", cost: 5,  growMs: 30000,  sell: 12,  unlockPlots: 0  },
-  tomato:     { name: "Tomato",     emoji: "🍅", cost: 12, growMs: 50000,  sell: 26,  unlockPlots: 6  },
-  corn:       { name: "Corn",       emoji: "🌽", cost: 20, growMs: 75000,  sell: 45,  unlockPlots: 9  },
-  pumpkin:    { name: "Pumpkin",    emoji: "🎃", cost: 35, growMs: 110000, sell: 80,  unlockPlots: 12 },
-  strawberry: { name: "Strawberry", emoji: "🍓", cost: 60, growMs: 150000, sell: 140, unlockPlots: 16 },
+  wheat:      { name: "Wheat",      emoji: "🌾", cost: 2,  growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1 },
+  carrot:     { name: "Carrot",     emoji: "🥕", cost: 5,  growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1 },
+  tomato:     { name: "Tomato",     emoji: "🍅", cost: 12, growMs: 50000,  sell: 26,  unlockPlots: 6,  chops: 2 },
+  corn:       { name: "Corn",       emoji: "🌽", cost: 20, growMs: 75000,  sell: 45,  unlockPlots: 9,  chops: 2 },
+  pumpkin:    { name: "Pumpkin",    emoji: "🎃", cost: 35, growMs: 110000, sell: 80,  unlockPlots: 12, chops: 3 },
+  strawberry: { name: "Strawberry", emoji: "🍓", cost: 60, growMs: 150000, sell: 140, unlockPlots: 16, chops: 2 },
+};
+
+// how each crop LOOKS as a living plant: w/h = full-grown size (px, front row),
+// stems: [leftPx, widthPx, tiltDeg, heightFrac], balls: leafy clumps [xPct, bottomPct, sizePx],
+// fruit: the produce that pops out near the end of growth
+const PLANTS = {
+  wheat: {
+    w: 30, h: 52, goldWhenRipe: true,
+    stems: [[3,3,-9,0.85],[9,3,-4,0.95],[14,3,0,1],[19,3,4,0.9],[25,3,9,0.8]],
+    balls: [],
+    fruit: { e: "🌾", size: 26, x: 50, bottom: 62 },
+  },
+  carrot: {
+    w: 30, h: 26,
+    stems: [[6,3,-26,0.9],[11,3,-10,1],[15,3,2,0.95],[20,3,14,0.9],[24,3,28,0.8]],
+    balls: [],
+    fruit: { e: "🥕", size: 18, x: 50, bottom: -12 },
+  },
+  tomato: {
+    w: 36, h: 58,
+    stems: [[16,5,0,1]], stake: true,
+    balls: [[30,34,20],[62,52,22],[46,74,19],[58,20,16]],
+    fruit: { e: "🍅", size: 19, x: 42, bottom: 38 },
+  },
+  corn: {
+    w: 34, h: 84,
+    stems: [[15,6,0,1]],
+    cornleaves: [[0.32,-1],[0.55,1],[0.74,-1]],
+    balls: [],
+    fruit: { e: "🌽", size: 24, x: 66, bottom: 46 },
+  },
+  pumpkin: {
+    w: 52, h: 30,
+    stems: [[14,4,-18,0.8],[20,4,6,1]],
+    balls: [[26,40,18],[52,26,16]],
+    fruit: { e: "🎃", size: 34, x: 74, bottom: -8 },
+  },
+  strawberry: {
+    w: 38, h: 26,
+    stems: [],
+    balls: [[28,18,20],[54,28,22],[74,14,18]],
+    fruit: { e: "🍓", size: 17, x: 46, bottom: 26 },
+  },
 };
 
 const GRID = 25;             // 25 planting spots in the field (5 per row, front row first)
@@ -425,7 +588,9 @@ const FACES = ["👩‍🌾","👨","🧑‍🦰","👵","👴","🧒","👱‍�
 const ROW_TOP    = [88, 70, 54, 40, 28];   // % down the field layer
 const ROW_SCALE  = [1.00, 0.88, 0.77, 0.67, 0.58];
 const ROW_SPREAD = [1.00, 0.91, 0.82, 0.73, 0.64];
-const GLYPH_SIZE = { sprout: 18, mid: 28, ready: 46, weed: 20 };
+
+// where the field layer sits inside the scene (must match the CSS above)
+const FIELD_LEFT = 15, FIELD_WIDTH = 70, FIELD_TOP = 42, FIELD_HEIGHT = 52;
 
 // ---------------- State ----------------
 let state = null;
@@ -438,7 +603,7 @@ function freshState() {
   return {
     money: START_MONEY,
     plotsOwned: START_PLOTS,
-    // each plot: null (empty soil) or { crop, plantedAt }
+    // each plot: null (empty soil) or { crop, plantedAt, chopsLeft? }
     plots: Array.from({ length: GRID }, () => null),
     barn: {},                // harvested crops: { wheat: 3, ... }
   };
@@ -479,6 +644,7 @@ function blip(freq, dur = 0.08, type = "square", vol = 0.04) {
   } catch (e) { /* no audio available */ }
 }
 const sndPlant   = () => blip(330, 0.07);
+const sndChop    = () => blip(220, 0.06, "square", 0.05);
 const sndHarvest = () => { blip(520, 0.06); setTimeout(() => blip(660, 0.08), 60); };
 const sndSell    = () => { blip(660, 0.06); setTimeout(() => blip(880, 0.1), 70); };
 const sndBuy     = () => blip(440, 0.12, "triangle");
@@ -504,6 +670,12 @@ function floater(text, x, y, color = "#2e7d32") {
   el.style.color = color;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1000);
+}
+
+// floaters anchored to a point in the scene (for farmer actions)
+function sceneFloater(text, sx, sy, color) {
+  const r = $("scene").getBoundingClientRect();
+  floater(text, r.left + r.width * sx / 100, r.top + r.height * sy / 100 - 40, color);
 }
 
 function popMoney() {
@@ -534,8 +706,34 @@ function spotPosition(i) {
   return { left, top, row };
 }
 
+// spot position in scene coordinates (%)
+function spotScenePos(i) {
+  const { left, top } = spotPosition(i);
+  return { x: FIELD_LEFT + left * FIELD_WIDTH / 100, y: FIELD_TOP + top * FIELD_HEIGHT / 100 };
+}
+
 function rowsOwned() {
   return Math.ceil(state.plotsOwned / COLS);
+}
+
+function buildPlantHTML(crop, scale) {
+  const p = PLANTS[crop];
+  const w = p.w * scale, h = p.h * scale;
+  let inner = "";
+  for (const [x, sw, tilt, hf] of p.stems || []) {
+    inner += `<i class="stem${p.stake ? " stake" : ""}" style="left:${x * scale}px; width:${Math.max(2, sw * scale)}px; height:${Math.round(hf * 100)}%; transform: rotate(${tilt}deg);"></i>`;
+  }
+  for (const [dir, flip] of (p.cornleaves || []).map((c, j) => [c[0], c[1]])) {
+    const side = flip > 0 ? "left:" + (17 * scale) + "px" : "left:" + (1 * scale) + "px";
+    inner += `<i class="cornleaf${flip > 0 ? " flip" : ""}" style="${side}; bottom:${Math.round(dir * 100)}%; width:${16 * scale}px; height:${28 * scale}px;"></i>`;
+  }
+  for (const [x, b, d] of p.balls || []) {
+    const dd = d * scale;
+    inner += `<i class="leafball" style="left:${x}%; bottom:${b}%; width:${dd}px; height:${dd}px; margin-left:${-dd / 2}px;"></i>`;
+  }
+  const f = p.fruit;
+  inner += `<span class="fruit" style="left:${f.x}%; bottom:${f.bottom * scale}px; font-size:${Math.round(f.size * scale)}px;">${f.e}</span>`;
+  return `<div class="plant plant-${crop}" style="width:${w}px; height:${h}px;"><div class="sway">${inner}</div></div>`;
 }
 
 function buildField() {
@@ -544,25 +742,29 @@ function buildField() {
   for (let i = 0; i < GRID; i++) {
     const { left, top, row } = spotPosition(i);
     const s = ROW_SCALE[row];
+    const sceneY = FIELD_TOP + top * FIELD_HEIGHT / 100;
     const el = document.createElement("div");
     el.className = "spot";
     el.style.left = left + "%";
     el.style.top = top + "%";
-    el.style.zIndex = 20 - row;   // front rows draw over back rows
+    el.style.zIndex = Math.round(sceneY * 10);   // nearer things draw on top
     el.innerHTML = `
       <div class="mound" style="left:${-30 * s}px; top:${-17 * s}px; width:${60 * s}px; height:${34 * s}px;"></div>
       <div class="sprite">
         <span class="bar" style="width:${38 * s}px;"><span></span></span>
-        <span class="glyph"></span>
+        <span class="plantbox"></span>
+        <span class="weed-glyph"></span>
       </div>`;
-    el.addEventListener("click", (ev) => spotClick(i, ev));
+    el.addEventListener("click", (ev) => { ev.stopPropagation(); walkToSpot(i); });
     field.appendChild(el);
     spotEls.push({
       el,
       scale: s,
-      glyph: el.querySelector(".glyph"),
+      plantbox: el.querySelector(".plantbox"),
+      weed: el.querySelector(".weed-glyph"),
       barFill: el.querySelector(".bar span"),
       sig: "",
+      plantEl: null,
     });
   }
 }
@@ -576,44 +778,51 @@ function updateField() {
 
   for (let i = 0; i < GRID; i++) {
     const s = spotEls[i];
-    let sig, glyphText = "", size = 0, barPct = -1;
+    let sig, cls = "spot", barPct = -1;
+    let prog = 0, crop = null;
 
     if (i >= state.plotsOwned) {
       const inSoil = Math.floor(i / COLS) < rows;
       sig = inSoil ? "weed" : "hidden";
-      glyphText = inSoil ? (i % 2 ? "🌿" : "🪨") : "";
-      size = GLYPH_SIZE.weed;
+      cls += inSoil ? " locked" : " hidden";
     } else {
       const p = state.plots[i];
       if (!p) {
         sig = "empty";
+        cls += " stage-empty";
       } else {
-        const c = CROPS[p.crop];
-        const prog = Math.min(1, (now - p.plantedAt) / c.growMs);
-        if (prog >= 1) {
-          sig = "ready:" + p.crop;
-          glyphText = c.emoji;
-          size = GLYPH_SIZE.ready;
-        } else {
-          const stage = prog < 0.5 ? "sprout" : "mid";
-          sig = stage + ":" + p.crop;
-          glyphText = stage === "sprout" ? "🌱" : "🌿";
-          size = GLYPH_SIZE[stage];
-          barPct = Math.round(prog * 100);
-        }
+        crop = p.crop;
+        const c = CROPS[crop];
+        prog = Math.min(1, (now - p.plantedAt) / c.growMs);
+        if (prog >= 1) { sig = "ready:" + crop; cls += " ready"; }
+        else { sig = "grow:" + crop; cls += " growing"; barPct = Math.round(prog * 100); }
       }
     }
 
     if (s.sig !== sig) {
-      s.sig = sig;
       const kind = sig.split(":")[0];
-      s.el.className = "spot " + (
-        kind === "hidden" ? "hidden" :
-        kind === "weed"   ? "locked" :
-        "stage-" + kind
-      );
-      s.glyph.textContent = glyphText;
-      s.glyph.style.fontSize = Math.round(size * s.scale) + "px";
+      const prevKind = s.sig.split(":")[0];
+      s.sig = sig;
+      s.el.className = cls + (s.el.classList.contains("near") ? " near" : "");
+      s.weed.textContent = kind === "weed" ? (i % 2 ? "🌿" : "🪨") : "";
+      if (kind === "weed") s.weed.style.fontSize = Math.round(20 * s.scale) + "px";
+      if (kind === "grow" || kind === "ready") {
+        if (!(prevKind === "grow" || prevKind === "ready") || !s.plantEl || !s.plantEl.classList.contains("plant-" + crop)) {
+          s.plantbox.innerHTML = buildPlantHTML(crop, s.scale);
+          s.plantEl = s.plantbox.querySelector(".plant");
+        }
+      } else if (s.plantEl) {
+        s.plantbox.innerHTML = "";
+        s.plantEl = null;
+      }
+    }
+
+    // continuous growth: the whole plant scales up from a seedling
+    if (s.plantEl) {
+      const k = 0.15 + 0.85 * prog;
+      s.plantEl.style.transform = `scale(${k.toFixed(3)})`;
+      s.plantEl.classList.toggle("fruited", prog >= 0.8);
+      if (PLANTS[crop].goldWhenRipe) s.plantEl.classList.toggle("ripe-gold", prog >= 0.95);
     }
     if (barPct >= 0) s.barFill.style.width = barPct + "%";
   }
@@ -627,12 +836,125 @@ function updateField() {
   }
 }
 
-function spotClick(i, ev) {
-  if (i >= state.plotsOwned) { buyLand(ev); return; }
-  const p = state.plots[i];
-  if (!p) { plant(i, ev); return; }
-  const c = CROPS[p.crop];
-  if (Date.now() - p.plantedAt >= c.growMs) harvest(i, ev);
+// ---------------- The farmer ----------------
+const farmer = {
+  x: 50, y: 82,            // scene %
+  facing: 1,
+  target: null,            // { x, y, spot } walk-to destination
+  chopUntil: 0,
+  keys: new Set(),
+  joy: null,               // { id, ox, oy, dx, dy } active touch joystick
+};
+const Y_MIN = 41, Y_MAX = 96;
+
+function farmerScale(y) {
+  return 0.55 + (y - Y_MIN) / (Y_MAX - Y_MIN) * 0.5;
+}
+
+// what the farmer could act on right now: nearest mound/crop/weed/sign in reach
+function nearestTarget() {
+  let best = null, bestD = 9.5;      // interaction radius in scene %
+  const consider = (x, y, kind, idx) => {
+    const d = Math.hypot(farmer.x - x, (farmer.y - y) * 1.5);
+    if (d < bestD) { bestD = d; best = { kind, idx, x, y }; }
+  };
+  const rows = rowsOwned();
+  for (let i = 0; i < GRID; i++) {
+    const { x, y } = spotScenePos(i);
+    if (i >= state.plotsOwned) {
+      if (Math.floor(i / COLS) < rows) consider(x, y, "buy", i);
+      continue;
+    }
+    const p = state.plots[i];
+    if (!p) consider(x, y, "plant", i);
+    else if (Date.now() - p.plantedAt >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
+  }
+  if (state.plotsOwned < GRID) consider(9, 92, "buy", -1);   // the wooden sign
+  return best;
+}
+
+let lastNear = null;
+function updateNearHighlight(t) {
+  const key = t ? t.kind + ":" + t.idx : "";
+  if (key === lastNear) return;
+  lastNear = key;
+  for (const s of spotEls) s.el.classList.remove("near");
+  $("landSign").classList.remove("near");
+  const btn = $("actionBtn");
+  if (!t) {
+    btn.textContent = "🚶";
+    btn.classList.add("idle");
+    return;
+  }
+  btn.classList.remove("idle");
+  btn.textContent = t.kind === "plant" ? CROPS[selectedSeed].emoji : t.kind === "chop" ? "🪓" : "🪧";
+  if (t.idx >= 0) spotEls[t.idx].el.classList.add("near");
+  else $("landSign").classList.add("near");
+}
+
+function doAction() {
+  if (Date.now() < farmer.chopUntil) return;
+  const t = nearestTarget();
+  if (!t) return;
+  if (t.kind === "plant") plantAt(t.idx);
+  else if (t.kind === "chop") chopAt(t.idx);
+  else buyLand();
+}
+
+function walkToSpot(i) {
+  const { x, y } = spotScenePos(i);
+  farmer.target = { x, y: Math.min(Y_MAX, y + 3), spot: i };
+}
+
+const farmerEl = $("farmer");
+function updateFarmer(dt) {
+  const now = Date.now();
+  let dx = 0, dy = 0;
+
+  if (farmer.joy && (farmer.joy.dx || farmer.joy.dy)) {
+    dx = farmer.joy.dx; dy = farmer.joy.dy;
+    farmer.target = null;
+  } else {
+    const k = farmer.keys;
+    if (k.has("left")) dx -= 1;
+    if (k.has("right")) dx += 1;
+    if (k.has("up")) dy -= 1;
+    if (k.has("down")) dy += 1;
+    if (dx || dy) farmer.target = null;
+    else if (farmer.target) {
+      const tx = farmer.target.x - farmer.x, ty = farmer.target.y - farmer.y;
+      const dist = Math.hypot(tx, ty * 1.5);
+      if (dist < 2.2) {
+        const arrived = farmer.target;
+        farmer.target = null;
+        if (arrived.spot !== undefined) doAction();
+      } else {
+        dx = tx; dy = ty;
+      }
+    }
+  }
+
+  const mag = Math.hypot(dx, dy);
+  const moving = mag > 0.01 && now >= farmer.chopUntil;
+  if (moving) {
+    dx /= mag; dy /= mag;
+    farmer.x += dx * 30 * dt;
+    farmer.y += dy * 22 * dt;
+    farmer.x = Math.max(2, Math.min(98, farmer.x));
+    farmer.y = Math.max(Y_MIN, Math.min(Y_MAX, farmer.y));
+    if (dx > 0.1) farmer.facing = 1;
+    if (dx < -0.1) farmer.facing = -1;
+  }
+
+  const s = farmerScale(farmer.y);
+  farmerEl.style.left = farmer.x + "%";
+  farmerEl.style.top = farmer.y + "%";
+  farmerEl.style.zIndex = Math.round(farmer.y * 10) + 1;
+  farmerEl.style.transform = `translate(-50%, -94%) scale(${(s * farmer.facing).toFixed(3)}, ${s.toFixed(3)})`;
+  farmerEl.classList.toggle("walking", moving);
+  farmerEl.classList.toggle("chopping", now < farmer.chopUntil);
+
+  updateNearHighlight(nearestTarget());
 }
 
 // ---------------- Rendering (header / shop / queue) ----------------
@@ -666,6 +988,7 @@ function renderSeeds() {
     btn.onclick = () => {
       if (locked) { sndNope(); toast(`Own ${c.unlockPlots} plots to unlock ${c.name}!`); return; }
       selectedSeed = key;
+      lastNear = "?";        // refresh the action button icon
       renderSeeds();
     };
     wrap.appendChild(btn);
@@ -717,7 +1040,7 @@ function renderAll() {
 }
 
 // ---------------- Actions ----------------
-function plant(i, ev) {
+function plantAt(i) {
   const c = CROPS[selectedSeed];
   if (state.plotsOwned < c.unlockPlots) return;
   if (state.money < c.cost) {
@@ -728,21 +1051,57 @@ function plant(i, ev) {
   state.money -= c.cost;
   state.plots[i] = { crop: selectedSeed, plantedAt: Date.now() };
   sndPlant();
-  floater(`-$${c.cost}`, ev.clientX, ev.clientY, "#c62828");
+  const { x, y } = spotScenePos(i);
+  sceneFloater(`-$${c.cost}`, x, y, "#c62828");
+  lastNear = "?";
   save();
   renderHeader();
   updateField();
 }
 
-function harvest(i, ev) {
+function chopAt(i) {
   const p = state.plots[i];
   if (!p) return;
   const c = CROPS[p.crop];
   if (Date.now() - p.plantedAt < c.growMs) return;
+
+  // face the crop and swing the axe
+  const { x, y } = spotScenePos(i);
+  farmer.facing = x >= farmer.x ? 1 : -1;
+  farmer.chopUntil = Date.now() + 340;
+  farmerEl.classList.remove("chopping");
+  void farmerEl.offsetWidth;
+  sndChop();
+
+  if (p.chopsLeft === undefined) p.chopsLeft = c.chops;
+  p.chopsLeft--;
+
+  const s = spotEls[i];
+  if (p.chopsLeft > 0) {
+    // wobble but stay standing
+    if (s.plantEl) {
+      s.plantEl.classList.remove("shake");
+      void s.plantEl.offsetWidth;
+      s.plantEl.classList.add("shake");
+    }
+    save();
+    return;
+  }
+
+  // timber! the crop falls and goes in the barn
   state.plots[i] = null;
   state.barn[p.crop] = (state.barn[p.crop] || 0) + 1;
+  const ghost = document.createElement("div");
+  ghost.className = "chopped";
+  ghost.textContent = c.emoji;
+  ghost.style.left = x + "%";
+  ghost.style.top = y + "%";
+  ghost.style.fontSize = Math.round(34 * s.scale) + "px";
+  $("scene").appendChild(ghost);
+  setTimeout(() => ghost.remove(), 700);
   sndHarvest();
-  floater(`+1 ${c.emoji}`, ev.clientX, ev.clientY);
+  sceneFloater(`+1 ${c.emoji}`, x, y);
+  lastNear = "?";
   save();
   renderHeader();
   updateField();
@@ -768,7 +1127,7 @@ function serve(id, ev) {
   renderQueue();
 }
 
-function buyLand(ev) {
+function buyLand() {
   const price = landPrice();
   if (state.money < price) {
     sndNope();
@@ -778,13 +1137,13 @@ function buyLand(ev) {
   state.money -= price;
   state.plotsOwned++;
   sndBuy();
-  floater(`-$${price}`, ev.clientX, ev.clientY, "#c62828");
   toast(`🎉 New plot! You now own ${state.plotsOwned} plots.`);
   for (const c of Object.values(CROPS)) {
     if (c.unlockPlots === state.plotsOwned) {
       toast(`🌟 New seed unlocked: ${c.emoji} ${c.name}!`);
     }
   }
+  lastNear = "?";
   save();
   renderHeader();
   renderSeeds();
@@ -848,6 +1207,100 @@ function tick() {
   renderQueue();
 }
 
+// farmer movement runs at full frame rate
+let lastFrame = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - lastFrame) / 1000);
+  lastFrame = t;
+  updateFarmer(dt);
+  requestAnimationFrame(frame);
+}
+
+// ---------------- Input ----------------
+const KEYMAP = {
+  ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
+  a: "left", d: "right", w: "up", s: "down",
+  A: "left", D: "right", W: "up", S: "down",
+};
+window.addEventListener("keydown", (e) => {
+  if (e.key === " " || e.key === "e" || e.key === "E" || e.key === "Enter") {
+    if (document.activeElement && document.activeElement.tagName === "BUTTON" && e.key !== " ") return;
+    e.preventDefault();
+    doAction();
+    return;
+  }
+  const dir = KEYMAP[e.key];
+  if (dir) { e.preventDefault(); farmer.keys.add(dir); }
+});
+window.addEventListener("keyup", (e) => {
+  const dir = KEYMAP[e.key];
+  if (dir) farmer.keys.delete(dir);
+});
+window.addEventListener("blur", () => farmer.keys.clear());
+
+// touch joystick: press anywhere on the left of the scene and drag your thumb
+const sceneEl = $("scene");
+const stickEl = $("stick");
+const knobEl = $("knob");
+
+sceneEl.addEventListener("touchstart", (e) => {
+  if (e.target.closest(".action-btn, .land-sign")) return;
+  const r = sceneEl.getBoundingClientRect();
+  for (const t of e.changedTouches) {
+    if (farmer.joy === null) {
+      e.preventDefault();
+      farmer.joy = { id: t.identifier, ox: t.clientX, oy: t.clientY, dx: 0, dy: 0 };
+      stickEl.style.display = "block";
+      stickEl.style.left = (t.clientX - r.left) + "px";
+      stickEl.style.top = (t.clientY - r.top) + "px";
+      knobEl.style.transform = "translate(0,0)";
+    }
+  }
+}, { passive: false });
+
+sceneEl.addEventListener("touchmove", (e) => {
+  if (!farmer.joy) return;
+  for (const t of e.changedTouches) {
+    if (t.identifier === farmer.joy.id) {
+      e.preventDefault();
+      const R = 42;
+      let dx = t.clientX - farmer.joy.ox;
+      let dy = t.clientY - farmer.joy.oy;
+      const m = Math.hypot(dx, dy);
+      if (m > R) { dx = dx / m * R; dy = dy / m * R; }
+      knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+      const dead = 6;
+      farmer.joy.dx = Math.abs(dx) > dead ? dx / R : 0;
+      farmer.joy.dy = Math.abs(dy) > dead ? dy / R : 0;
+    }
+  }
+}, { passive: false });
+
+function endJoy(e) {
+  if (!farmer.joy) return;
+  for (const t of e.changedTouches) {
+    if (t.identifier === farmer.joy.id) {
+      farmer.joy = null;
+      stickEl.style.display = "none";
+    }
+  }
+}
+sceneEl.addEventListener("touchend", endJoy);
+sceneEl.addEventListener("touchcancel", endJoy);
+
+// tap/click the grass to walk there
+sceneEl.addEventListener("click", (e) => {
+  if (e.target.closest(".action-btn, .land-sign, .spot")) return;
+  const r = sceneEl.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * 100;
+  const y = (e.clientY - r.top) / r.height * 100;
+  if (y < Y_MIN - 4) return;   // clicked the sky
+  farmer.target = { x: Math.max(2, Math.min(98, x)), y: Math.max(Y_MIN, Math.min(Y_MAX, y)) };
+});
+
+$("actionBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doAction(); });
+$("landSign").addEventListener("click", () => buyLand());
+
 // ---------------- Boot ----------------
 $("reset").onclick = () => {
   if (confirm("Start a brand new farm? Your progress will be lost.")) {
@@ -855,20 +1308,21 @@ $("reset").onclick = () => {
     state = freshState();
     customers = [];
     selectedSeed = "wheat";
-    for (const s of spotEls) s.sig = "";
+    for (const s of spotEls) { s.sig = ""; s.plantbox.innerHTML = ""; s.plantEl = null; }
+    lastNear = "?";
     scheduleNextCustomer();
     renderAll();
     toast("🌅 A fresh start on a tiny farm!");
   }
 };
-$("landSign").onclick = (ev) => buyLand(ev);
 
 state = load() || freshState();
 buildField();
 scheduleNextCustomer();
 renderAll();
-toast("🌾 Welcome to your tiny farm! Plant some wheat to begin.");
+toast("🌾 Welcome! Walk to your field, plant seeds, and chop your crops when they're tall.");
 setInterval(tick, 400);
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
