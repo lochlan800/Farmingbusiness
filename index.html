@@ -163,6 +163,49 @@
   .wxbadge .wxnext {
     font-weight: normal; font-size: 0.72rem; opacity: 0.95; margin-left: 4px;
   }
+  .seasonbadge {
+    position: absolute; top: 48px; left: 10px; z-index: 1002;
+    pointer-events: none;
+    background: linear-gradient(180deg, #b8834c, var(--plank-dark));
+    border: 3px solid var(--wood-dark); border-radius: 10px;
+    color: var(--cream); font-weight: bold; font-size: 0.75rem;
+    padding: 3px 9px;
+    box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  /* the land itself changes with the season */
+  .scene.season-summer .grass { filter: hue-rotate(-9deg) saturate(1.05); }
+  .scene.season-summer .hill { filter: hue-rotate(-9deg) saturate(1.05); }
+  .scene.season-autumn .grass { filter: sepia(0.3) hue-rotate(-14deg) saturate(1.15); }
+  .scene.season-autumn .hill { filter: sepia(0.35) hue-rotate(-16deg) saturate(1.15); }
+  .scene.season-autumn .tree { filter: hue-rotate(-55deg) saturate(1.3) brightness(1.02) drop-shadow(0 5px 4px rgba(60,30,10,0.25)); }
+  .scene.season-winter .grass { filter: saturate(0.4) brightness(1.14) hue-rotate(14deg); }
+  .scene.season-winter .hill { filter: saturate(0.4) brightness(1.16) hue-rotate(14deg); }
+  .scene.season-winter .tree { filter: saturate(0.35) brightness(1.18) drop-shadow(0 5px 4px rgba(40,50,70,0.25)); }
+
+  /* extreme weather overlays */
+  .wx.heatwave {
+    background:
+      radial-gradient(130% 90% at 70% 8%, rgba(255,120,40,0.32), transparent 62%),
+      linear-gradient(180deg, rgba(255,140,30,0.24), rgba(230,70,10,0.16));
+    animation: heatThrob 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes heatThrob { from { opacity: 0.85; } to { opacity: 1; } }
+  .wx.blizzard {
+    background-color: rgba(210,230,250,0.42);
+    background-image:
+      radial-gradient(3.5px 3.5px at 22px 28px, #fff 45%, transparent 60%),
+      radial-gradient(2.5px 2.5px at 75px 82px, #fff 45%, transparent 60%),
+      radial-gradient(3px 3px at 128px 45px, #fff 45%, transparent 60%),
+      radial-gradient(2.5px 2.5px at 50px 120px, #fff 45%, transparent 60%),
+      radial-gradient(2px 2px at 100px 100px, #fff 45%, transparent 60%);
+    background-size: 140px 140px;
+    animation: blizzardfall 1.3s linear infinite;
+  }
+  @keyframes blizzardfall {
+    from { background-position: 0 -140px, 30px -140px, 60px -140px, 90px -140px, 120px -140px; }
+    to   { background-position: 90px 140px, 120px 140px, 30px 140px, 150px 140px, 60px 140px; }
+  }
 
   /* sun with slowly turning rays */
   .sun {
@@ -820,6 +863,7 @@
 
     <div class="wx" id="wx"></div>
     <div class="wxbadge" id="wxBadge">☀️ Sunny</div>
+    <div class="seasonbadge" id="seasonBadge">🌸 Spring</div>
     <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
     <button class="action-btn idle" id="actionBtn" title="Plant / water / chop / sell">🚶</button>
     <div class="light"></div>
@@ -886,6 +930,31 @@ const WEATHERS = {
              msg: "🥵 Drought! Growth is slow and plants wilt — water them to revive them!" },
   snow:    { icon: "❄️", name: "Snow",    mult: 0.7, ail: "frozen", rate: 1 / 35, weight: 17,
              msg: "❄️ Snow! Plants are freezing over — break the ice to free them!" },
+  // extreme weather — never in the normal rotation, only as rare surprise events
+  heatwave:{ icon: "🔥", name: "HEATWAVE", mult: 0.3, ail: "wilt",   rate: 1 / 14, weight: 0,
+             msg: "🔥 EXTREME HEATWAVE! Plants are wilting fast — water everything!" },
+  blizzard:{ icon: "🌨️", name: "BLIZZARD", mult: 0.45, ail: "frozen", rate: 1 / 14, weight: 0,
+             msg: "🌨️ EXTREME BLIZZARD! Ice everywhere — keep breaking it!" },
+};
+const EXTREMES = ["storm", "heatwave", "blizzard"];
+const EXTREME_CHANCE = 0.09;   // any forecast roll can turn extreme, in any season
+
+// ---------------- Seasons ----------------
+// each season leans the weather the way you'd expect, extremes aside
+const SEASON_MS = 180000;      // 3 minutes per season, a 12-minute year
+const SEASONS = {
+  spring: { icon: "🌸", name: "Spring", after: "summer",
+            msg: "🌸 Spring has arrived — sunshine and plenty of showers!",
+            weights: { sunny: 30, rain: 34, storm: 10, drought: 3, snow: 2 } },
+  summer: { icon: "☀️", name: "Summer", after: "autumn",
+            msg: "☀️ Summer has arrived — hot and dry, keep that water handy!",
+            weights: { sunny: 38, rain: 8, storm: 12, drought: 26, snow: 0 } },
+  autumn: { icon: "🍂", name: "Autumn", after: "winter",
+            msg: "🍂 Autumn has arrived — wet, wild and stormy!",
+            weights: { sunny: 24, rain: 28, storm: 20, drought: 4, snow: 6 } },
+  winter: { icon: "❄️", name: "Winter", after: "spring",
+            msg: "❄️ Winter has arrived — bundle up, the snow is coming!",
+            weights: { sunny: 22, rain: 6, storm: 5, drought: 0, snow: 40 } },
 };
 // what each ailment looks like and how the farmer fixes it
 const AILS = {
@@ -1015,7 +1084,8 @@ function freshState() {
     plots: Array.from({ length: GRID }, () => null),
     barn: {},                // harvested crops: { wheat: 3, ... }
     water: 0,                // waterings left in the can
-    weather: null,           // { kind, until } — rolled on first tick
+    weather: null,           // { kind, until, next } — rolled on first tick
+    season: null,            // { name, until } — starts in spring on first tick
     lastSeen: Date.now(),
   };
 }
@@ -1058,8 +1128,11 @@ function load() {
           }
           p.ail = null;   // troubles don't persist across visits — be kind
         }
-        // older saves have no forecast yet — give them one
-        if (s.weather && !s.weather.next) s.weather.next = pickWeatherKind();
+        // older saves predate seasons and forecasts — give them both
+        if (!s.season || !SEASONS[s.season.name]) s.season = { name: "spring", until: now + SEASON_MS };
+        if (s.weather && (!s.weather.next || !WEATHERS[s.weather.next])) {
+          s.weather.next = pickWeatherKind(s.season.name);
+        }
         // credit growth for time away (at calm sunny pace)
         if (typeof s.lastSeen === "number") {
           const away = Math.max(0, now - s.lastSeen);
@@ -1783,11 +1856,17 @@ function spawnCustomer() {
 }
 
 // ---------------- Weather engine ----------------
-function pickWeatherKind() {
-  const total = Object.values(WEATHERS).reduce((a, w) => a + w.weight, 0);
+function pickWeatherKind(seasonName) {
+  // rarely, the sky just goes wild — extreme weather ignores the season
+  if (Math.random() < EXTREME_CHANCE) {
+    return EXTREMES[Math.floor(Math.random() * EXTREMES.length)];
+  }
+  const sn = seasonName || (state && state.season ? state.season.name : "spring");
+  const weights = SEASONS[sn].weights;
+  const total = Object.values(weights).reduce((a, w) => a + w, 0);
   let r = Math.random() * total;
-  for (const [k, w] of Object.entries(WEATHERS)) {
-    r -= w.weight;
+  for (const [k, w] of Object.entries(weights)) {
+    r -= w;
     if (r <= 0) return k;
   }
   return "sunny";
@@ -1796,7 +1875,9 @@ function pickWeatherKind() {
 function rollWeather(now) {
   // the forecast keeps its promise: what the badge predicted is what arrives
   const kind = (state.weather && state.weather.next) || pickWeatherKind();
-  const dur = (kind === "sunny" ? 50 : 40) * 1000 + Math.random() * 50000;
+  const dur = EXTREMES.includes(kind) && kind !== "storm"
+    ? 25000 + Math.random() * 20000                       // extremes hit hard but pass quickly
+    : (kind === "sunny" ? 50 : 40) * 1000 + Math.random() * 50000;
   state.weather = { kind, until: now + dur, next: pickWeatherKind() };
   // a change in the sky clears old troubles — puddles dry, ice melts
   for (const p of state.plots) if (p) p.ail = null;
@@ -1822,6 +1903,24 @@ function updateForecastClock(now) {
   t.textContent = s + "s";
 }
 
+// ---------------- Season engine ----------------
+function advanceSeason(now) {
+  const name = state.season ? SEASONS[state.season.name].after : "spring";
+  state.season = { name, until: now + SEASON_MS };
+  applySeasonUI();
+  toast(SEASONS[name].msg);
+  save();
+}
+
+function applySeasonUI() {
+  const name = state.season ? state.season.name : "spring";
+  const s = SEASONS[name];
+  $("seasonBadge").textContent = `${s.icon} ${s.name}`;
+  const scene = $("scene");
+  for (const k of Object.keys(SEASONS)) scene.classList.remove("season-" + k);
+  scene.classList.add("season-" + name);
+}
+
 // ---------------- Game loop ----------------
 let lastGrow = Date.now();
 let tickCount = 0;
@@ -1829,7 +1928,8 @@ let tickCount = 0;
 function tick() {
   const now = Date.now();
 
-  // the sky changes on its own schedule
+  // the year turns, then the sky changes on its own schedule
+  if (!state.season || now >= state.season.until) advanceSeason(now);
   if (!state.weather || now >= state.weather.until) rollWeather(now);
   updateForecastClock(now);
   const W = WEATHERS[state.weather.kind];
@@ -2011,6 +2111,7 @@ $("reset").onclick = () => {
     for (const s of spotEls) { s.sig = ""; s.plantbox.innerHTML = ""; s.plantEl = null; }
     lastNear = "?";
     applyWeatherUI();
+    applySeasonUI();
     scheduleNextCustomer();
     renderAll();
     toast("🌅 A fresh start on a tiny farm!");
@@ -2020,6 +2121,7 @@ $("reset").onclick = () => {
 state = load() || freshState();
 buildField();
 applyWeatherUI();
+applySeasonUI();
 scheduleNextCustomer();
 renderAll();
 toast("🌾 Welcome! Grow crops, chop them down, and sell to the folks at your stand.");
