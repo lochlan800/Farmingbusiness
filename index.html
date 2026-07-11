@@ -939,6 +939,21 @@ const WEATHERS = {
 const EXTREMES = ["storm", "heatwave", "blizzard"];
 const EXTREME_CHANCE = 0.09;   // any forecast roll can turn extreme, in any season
 
+// ---------------- Market demand ----------------
+// demand shifts every couple of minutes: hot crops attract more customers who
+// pay more; low-demand crops attract few buyers at knock-down prices
+const DEMAND_MS = 100000;
+const DEMAND = {
+  hot:    { label: "🔥 HOT",   color: "#e65100", priceMult: 1.5,  freqMult: 3   },
+  high:   { label: "▲ high",   color: "#2e7d32", priceMult: 1.25, freqMult: 2   },
+  normal: { label: "· steady", color: "#8d7a5e", priceMult: 1,    freqMult: 1   },
+  low:    { label: "▼ low",    color: "#c62828", priceMult: 0.75, freqMult: 0.4 },
+};
+
+function demandOf(crop) {
+  return (state && state.demand && state.demand[crop]) || "normal";
+}
+
 // ---------------- Seasons ----------------
 // each season leans the weather the way you'd expect, extremes aside
 const SEASON_MS = 180000;      // 3 minutes per season, a 12-minute year
@@ -1086,6 +1101,8 @@ function freshState() {
     water: 0,                // waterings left in the can
     weather: null,           // { kind, until, next } — rolled on first tick
     season: null,            // { name, until } — starts in spring on first tick
+    demand: null,            // { crop: "hot"|"high"|"normal"|"low" } — rolled on first tick
+    demandUntil: 0,
     lastSeen: Date.now(),
   };
 }
@@ -1525,7 +1542,7 @@ function buildCustomerEl(cust) {
   el.className = "cust moving";
   el.innerHTML = `
     <div class="cin">
-      <div class="bubble" style="--bcol:${RARITIES[c.rarity].color}">${cust.qty}× ${c.emoji} <b>$${c.sell * cust.qty}</b><span class="pbar"><span></span></span></div>
+      <div class="bubble" style="--bcol:${RARITIES[c.rarity].color}">${cust.qty}× ${c.emoji} <b>$${cust.pay != null ? cust.pay : c.sell * cust.qty}</b><span class="pbar"><span></span></span></div>
       <div class="cshadow"></div>
       <div class="cbody">
         <span class="chead">${cust.face}</span>
@@ -1613,12 +1630,13 @@ function renderSeeds() {
     const rar = RARITIES[c.rarity];
     const btn = document.createElement("button");
     btn.className = "seed-btn" + (key === selectedSeed ? " selected" : "") + (locked ? " locked" : "");
+    const dm = DEMAND[demandOf(key)];
     btn.title = locked
       ? `${c.name} (${rar.label}) — own ${c.unlockPlots} plots to unlock`
-      : `${c.name} (${rar.label}) — plant $${c.cost}, sells $${c.sell}`;
+      : `${c.name} (${rar.label}) — plant $${c.cost}, sells $${c.sell}. Demand: ${dm.label.replace(/^\S+ /, "")}`;
     btn.innerHTML = locked
       ? `<span class="big">🔒</span>${c.unlockPlots} plots`
-      : `<span class="big">${c.emoji}</span>$${c.cost}`;
+      : `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:${dm.color}">${dm.label}</small>`;
     // rarity shows as the chip's border and a stripe under the price
     btn.style.borderColor = rar.color;
     if (!locked) btn.style.boxShadow = `0 2px 0 rgba(90,60,25,0.5), 0 4px 6px rgba(60,35,10,0.2), inset 0 -3px 0 ${rar.color}`;
@@ -1777,7 +1795,7 @@ function serve(id) {
     toast(`${cust.face} wants ${cust.qty}× ${c.emoji} — you don't have enough yet!`);
     return;
   }
-  const total = c.sell * cust.qty;
+  const total = cust.pay != null ? cust.pay : c.sell * cust.qty;
   state.barn[cust.crop] -= cust.qty;
   state.money += total;
   customers.splice(idx, 1);
@@ -1837,11 +1855,13 @@ function scheduleNextCustomer() {
 
 function spawnCustomer() {
   const options = unlockedCrops();
-  // customers prefer cheaper crops so early game stays winnable
+  // customers prefer cheaper crops (so early game stays winnable),
+  // and flock to whatever the market says is in demand
   const weighted = [];
   options.forEach((k, idx) => {
-    const weight = Math.max(1, options.length - idx);
-    for (let j = 0; j < weight; j++) weighted.push(k);
+    const base = Math.max(1, options.length - idx);
+    const w = Math.max(1, Math.round(base * DEMAND[demandOf(k)].freqMult * 4));
+    for (let j = 0; j < w; j++) weighted.push(k);
   });
   const crop = weighted[Math.floor(Math.random() * weighted.length)];
   const qty = 1 + Math.floor(Math.random() * 3);
@@ -1850,6 +1870,8 @@ function spawnCustomer() {
     face: FACES[Math.floor(Math.random() * FACES.length)],
     crop,
     qty,
+    // the price is locked in when they join the queue
+    pay: Math.round(CROPS[crop].sell * qty * DEMAND[demandOf(crop)].priceMult),
     arrivedAt: Date.now(),
     px: 106, py: 99,         // walks in from the bottom-right corner
   });
@@ -1903,6 +1925,28 @@ function updateForecastClock(now) {
   t.textContent = s + "s";
 }
 
+// ---------------- Market demand engine ----------------
+function rollDemand(now) {
+  const keys = Object.keys(CROPS);
+  // shuffle, then crown one hot, one high, and mark two as low
+  for (let i = keys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [keys[i], keys[j]] = [keys[j], keys[i]];
+  }
+  const d = {};
+  for (const k of keys) d[k] = "normal";
+  d[keys[0]] = "hot";
+  d[keys[1]] = "high";
+  d[keys[2]] = "low";
+  d[keys[3]] = "low";
+  state.demand = d;
+  state.demandUntil = now + DEMAND_MS + Math.random() * 40000;
+  toast(`📊 Market news: ${CROPS[keys[0]].emoji} ${CROPS[keys[0]].name} is in 🔥 HOT demand! ` +
+        `${CROPS[keys[2]].emoji}${CROPS[keys[3]].emoji} selling cheap.`);
+  renderSeeds();
+  save();
+}
+
 // ---------------- Season engine ----------------
 function advanceSeason(now) {
   const name = state.season ? SEASONS[state.season.name].after : "spring";
@@ -1928,9 +1972,10 @@ let tickCount = 0;
 function tick() {
   const now = Date.now();
 
-  // the year turns, then the sky changes on its own schedule
+  // the year turns, the sky changes, and the market moves
   if (!state.season || now >= state.season.until) advanceSeason(now);
   if (!state.weather || now >= state.weather.until) rollWeather(now);
+  if (!state.demand || now >= state.demandUntil) rollDemand(now);
   updateForecastClock(now);
   const W = WEATHERS[state.weather.kind];
 
