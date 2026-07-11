@@ -465,6 +465,8 @@
   /* out-of-season plants sleep until their season comes back around */
   .spot.dormant .plantbox { filter: grayscale(0.65) brightness(0.92); }
   .spot.dormant .bar span { background: linear-gradient(180deg, #b0bec5, #78909c); }
+  /* tired soil (same crop twice in a row): slow growth, brown bar */
+  .spot.tired .bar span { background: linear-gradient(180deg, #d7a86e, #a1743f); }
   /* a plant on the brink of death flashes its warning urgently */
   .spot.dying .ailtag {
     animation: ailPanic 0.3s ease-in-out infinite alternate;
@@ -1206,6 +1208,7 @@ function freshState() {
     // each plot: null (empty soil) or
     // { crop, grown (ms of growth banked), chopsLeft?, wetUntil?, ail? }
     plots: Array.from({ length: GRID }, () => null),
+    lastCrop: Array.from({ length: GRID }, () => null),  // for crop rotation: what grew here last
     barn: {},                // harvested crops: { wheat: 3, ... }
     water: 0,                // waterings left in the can
     era: 0,                  // index into ERAS — everyone starts in the Stone Age
@@ -1244,6 +1247,8 @@ function load() {
         const now = Date.now();
         // older saves had a one-time can purchase — convert it to charges
         if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
+        // older saves don't track crop rotation yet
+        if (!Array.isArray(s.lastCrop)) s.lastCrop = Array.from({ length: GRID }, () => null);
         // older saves predate the ages — grant an era matching their old progress
         if (typeof s.era !== "number") {
           const p = s.plotsOwned || 4;
@@ -1458,8 +1463,8 @@ function updateField() {
           const wet = isWet(p);
           const ail = p.ail || "";
           const dormant = !inSeason(crop);
-          sig = "grow:" + crop + ":" + (wet ? "w" : "") + ail + (dormant ? "z" : "");
-          cls += " growing" + (wet ? " wet" : "") + (ail ? " ail-" + ail : "") + (dormant ? " dormant" : "");
+          sig = "grow:" + crop + ":" + (wet ? "w" : "") + ail + (dormant ? "z" : "") + (p.tired ? "t" : "");
+          cls += " growing" + (wet ? " wet" : "") + (ail ? " ail-" + ail : "") + (dormant ? " dormant" : "") + (p.tired ? " tired" : "");
           barPct = Math.round(prog * 100);
         }
       }
@@ -1471,7 +1476,9 @@ function updateField() {
       s.sig = sig;
       s.el.className = cls + (s.el.classList.contains("near") ? " near" : "");
       const gp = kind === "grow" ? state.plots[i] : null;
-      s.ailtag.textContent = gp ? (gp.ail ? AILS[gp.ail].tag : (!inSeason(gp.crop) ? "💤" : "")) : (kind === "dead" ? "💀" : "");
+      s.ailtag.textContent = gp
+        ? (gp.ail ? AILS[gp.ail].tag : (!inSeason(gp.crop) ? "💤" : (gp.tired ? "🐌" : "")))
+        : (kind === "dead" ? "💀" : "");
       s.weed.textContent = kind === "weed" ? (i % 2 ? "🌿" : "🪨") : (kind === "dead" ? "🥀" : "");
       if (kind === "weed") s.weed.style.fontSize = Math.round(20 * s.scale) + "px";
       if (kind === "dead") s.weed.style.fontSize = Math.round(26 * s.scale) + "px";
@@ -1839,10 +1846,17 @@ function plantAt(i) {
     return;
   }
   state.money -= c.cost;
-  state.plots[i] = { crop: selectedSeed, grown: 0 };
+  // planting the same crop where it just grew tires the soil — rotate!
+  const tired = state.lastCrop[i] === selectedSeed;
+  state.plots[i] = { crop: selectedSeed, grown: 0, tired: tired || undefined };
+  state.lastCrop[i] = selectedSeed;
   sndPlant();
   const { x, y } = spotScenePos(i);
   sceneFloater(`-$${c.cost}`, x, y, "#c62828");
+  if (tired) {
+    sceneFloater("🐌 tired soil", x, y - 6, "#8d6e63");
+    toast(`😴 This soil just grew ${c.emoji} ${c.name} — it's tired! Growth is 50% slower. Rotate your crops!`);
+  }
   lastNear = "?";
   save();
   renderHeader();
@@ -2217,7 +2231,7 @@ function tick() {
     if (!p || p.dead || isReady(p)) continue;
     if (!inSeason(p.crop)) continue;   // out of season: dormant, and weather leaves it be
     if (!p.ail) {
-      p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1);
+      p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1) * (p.tired ? 0.5 : 1);
       // weather can strike a healthy growing plant (not one just helped)
       if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
         p.ail = W.ail;
