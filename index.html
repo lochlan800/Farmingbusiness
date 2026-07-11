@@ -559,6 +559,7 @@
   }
   .seed-btn.locked { filter: grayscale(1); opacity: 0.55; cursor: not-allowed; }
   .seed-btn .big, .land-btn .big { font-size: 1.25rem; display: block; }
+  .seed-btn small { display: block; font-size: 0.6rem; color: #6d5b45; }
   .land-btn {
     color: var(--cream);
     background: linear-gradient(180deg, #c08c50, #a9743f 45%, #8a5c2c);
@@ -790,8 +791,9 @@ const CROPS = {
   starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, unlockPlots: 23, chops: 3 },
 };
 
-// the watering can: buy once, then water growing crops to double their speed
+// the watering can: $40 fills it with 3 waterings; each soak doubles growth speed
 const CAN_PRICE = 40;
+const CAN_USES = 3;
 const WATER_MS = 30000;      // one watering keeps a plant wet (2× growth) this long
 
 // how each crop LOOKS as a living plant: w/h = full-grown size (px, front row),
@@ -913,7 +915,7 @@ function freshState() {
     // each plot: null (empty soil) or { crop, plantedAt, chopsLeft?, wateredAt?, boost? }
     plots: Array.from({ length: GRID }, () => null),
     barn: {},                // harvested crops: { wheat: 3, ... }
-    can: false,              // owns the watering can?
+    water: 0,                // waterings left in the can
   };
 }
 
@@ -941,7 +943,11 @@ function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s && typeof s.money === "number" && Array.isArray(s.plots)) return s;
+      if (s && typeof s.money === "number" && Array.isArray(s.plots)) {
+        // older saves had a one-time can purchase — convert it to charges
+        if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
+        return s;
+      }
     }
   } catch (e) { /* corrupted save — start fresh */ }
   return null;
@@ -1196,7 +1202,7 @@ function nearestTarget() {
     const p = state.plots[i];
     if (!p) consider(x, y, "plant", i);
     else if (growElapsed(p) >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
-    else if (state.can && !isWet(p)) consider(x, y, "water", i);
+    else if (state.water > 0 && !isWet(p)) consider(x, y, "water", i);
   }
   for (const c of customers) {
     consider(c.px, c.py, "sell", "c" + c.id);
@@ -1416,16 +1422,14 @@ function renderSeeds() {
     };
     wrap.appendChild(btn);
   }
-  // the watering can — one-time tool purchase
-  if (!state.can) {
-    const canBtn = document.createElement("button");
-    canBtn.className = "seed-btn";
-    canBtn.style.borderColor = "#42a5f5";
-    canBtn.title = `Watering can — water growing crops so they grow twice as fast for ${WATER_MS / 1000}s`;
-    canBtn.innerHTML = `<span class="big">💧</span>$${CAN_PRICE}`;
-    canBtn.onclick = () => buyCan();
-    wrap.appendChild(canBtn);
-  }
+  // the watering can — $40 buys 3 waterings, chip shows what's left in the can
+  const canBtn = document.createElement("button");
+  canBtn.className = "seed-btn";
+  canBtn.style.borderColor = "#42a5f5";
+  canBtn.title = `Watering can — $${CAN_PRICE} for ${CAN_USES} waterings. Each soak makes a crop grow twice as fast for ${WATER_MS / 1000}s.`;
+  canBtn.innerHTML = `<span class="big">💧</span>$${CAN_PRICE}${state.water > 0 ? `<small>×${state.water} left</small>` : `<small>×${CAN_USES} uses</small>`}`;
+  canBtn.onclick = () => buyWater();
+  wrap.appendChild(canBtn);
   // buy-land button lives on the shelf too, so it never covers the farm
   const landBtn = document.createElement("button");
   landBtn.id = "landBtn";
@@ -1465,18 +1469,21 @@ function plantAt(i) {
 
 function waterAt(i) {
   const p = state.plots[i];
-  if (!p || !state.can || isWet(p)) return;
+  if (!p || state.water <= 0 || isWet(p)) return;
   const now = Date.now();
   // bank the bonus from any earlier watering, then start a fresh soak
   if (p.wateredAt) p.boost = (p.boost || 0) + Math.min(now - p.wateredAt, WATER_MS);
   p.wateredAt = now;
+  state.water--;
   const { x, y } = spotScenePos(i);
   farmer.facing = x >= farmer.x ? 1 : -1;
   blip(880, 0.05, "sine", 0.05);
   setTimeout(() => blip(660, 0.07, "sine", 0.05), 60);
   sceneFloater("💧", x, y, "#2196f3");
+  if (state.water === 0) toast("💧 The watering can is empty — grab a refill from the shelf!");
   lastNear = "?";
   save();
+  renderSeeds();
   updateField();
 }
 
@@ -1553,17 +1560,16 @@ function serve(id) {
   renderCustomers();
 }
 
-function buyCan() {
-  if (state.can) return;
+function buyWater() {
   if (state.money < CAN_PRICE) {
     sndNope();
-    toast(`Need $${CAN_PRICE} for the watering can!`);
+    toast(`Need $${CAN_PRICE} to fill the watering can!`);
     return;
   }
   state.money -= CAN_PRICE;
-  state.can = true;
+  state.water += CAN_USES;
   sndBuy();
-  toast("💧 Watering can! Walk to a growing crop and press the button to water it — 2× growth for 30s.");
+  toast(`💧 Watering can filled — ${state.water} waterings! Walk to a growing crop and press the button.`);
   lastNear = "?";
   save();
   renderHeader();
