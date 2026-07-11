@@ -509,7 +509,96 @@
     position: absolute; bottom: 62px; left: 56px; width: 20px; height: 16px;
     background: #fdf3da; border: 3px solid #7e2517; border-radius: 50% 50% 0 0; z-index: 1;
   }
-  .tractor { position: absolute; left: 15%; top: 28%; font-size: 30px; z-index: 2; transform: scaleX(-1); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.25)); }
+  .tractor { position: absolute; left: 15%; top: 28%; font-size: 30px; z-index: 2; transform: scaleX(-1); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.25)); display: none; }
+
+  /* ============ the look of each age ============ */
+  /* Stone & Bronze: a hide tent instead of a barn */
+  .tent {
+    position: absolute; left: 5%; top: 22%; width: 108px; height: 82px; z-index: 2;
+    display: none; filter: drop-shadow(0 5px 4px rgba(20,40,10,0.25));
+  }
+  .tent .tcloth {
+    position: absolute; inset: 0;
+    background: linear-gradient(115deg, #cda36c 0%, #b0854c 55%, #8f6a3a 100%);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  }
+  .tent .tstreak {
+    position: absolute; bottom: 0; width: 3px; background: rgba(90,60,25,0.4);
+  }
+  .tent .tstreak.s1 { left: 32%; height: 62%; transform: rotate(14deg); }
+  .tent .tstreak.s2 { left: 62%; height: 62%; transform: rotate(-14deg); }
+  .tent .tdoor {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 30px; height: 38px; background: #46301a;
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  }
+  .tent .tpole {
+    position: absolute; top: -10px; left: 50%; width: 4px; height: 26px;
+    background: #6d4f2c; border-radius: 2px;
+  }
+  .tent .tpole.p1 { transform: rotate(24deg); }
+  .tent .tpole.p2 { transform: rotate(-24deg); }
+  .scene.era-0 .tent, .scene.era-1 .tent { display: block; }
+  .scene.era-0 .barn, .scene.era-1 .barn { display: none; }
+  .scene.era-0 .fence { display: none; }         /* fences haven't been invented */
+  .scene.era-5 .tractor { display: block; }      /* tractors are strictly modern */
+
+  /* Iron & Medieval: a timber barn (thatched roof in medieval times) */
+  .scene.era-2 .barn .body, .scene.era-3 .barn .body {
+    background: linear-gradient(180deg, #ab8146 0%, #966f39 40%, #7d5a2b 100%);
+    border-color: #54391a;
+  }
+  .scene.era-2 .barn .roof { background: linear-gradient(180deg, #7d5f38, #64492a 50%, #503a20 100%); }
+  .scene.era-2 .barn .roofside { background: linear-gradient(90deg, #4d3820, #3f2e19); }
+  .scene.era-3 .barn .roof { background: linear-gradient(180deg, #cbaa52 0%, #b0913e 50%, #8f7430 100%); }
+  .scene.era-3 .barn .roofside { background: linear-gradient(90deg, #8a7130, #6f5b26); }
+  .scene.era-2 .barn .side, .scene.era-3 .barn .side {
+    background: linear-gradient(90deg, #8a6535, #6f501f);
+    border-color: #54391a;
+  }
+  .scene.era-2 .barn .door::before, .scene.era-2 .barn .door::after,
+  .scene.era-3 .barn .door::before, .scene.era-3 .barn .door::after { background: #54391a; }
+  .scene.era-2 .barn .door, .scene.era-2 .barn .loft,
+  .scene.era-3 .barn .door, .scene.era-3 .barn .loft { border-color: #54391a; }
+
+  /* the market stand through the ages: stone slab -> plain cloth -> stripes */
+  .scene.era-0 .stand .awning, .scene.era-0 .stand .aside,
+  .scene.era-1 .stand .awning, .scene.era-1 .stand .aside { display: none; }
+  .scene.era-0 .stand .counter {
+    background: linear-gradient(180deg, #c4bcae 0%, #a49c8d 45%, #837b6d 100%);
+    border-color: #57524a;
+  }
+  .scene.era-0 .stand .legL, .scene.era-0 .stand .legR { background: #837b6d; border-color: #57524a; }
+  .scene.era-0 .stand .cside { background: linear-gradient(90deg, #767065, #5f5a50); border-color: #57524a; }
+  .scene.era-2 .stand .awning, .scene.era-3 .stand .awning {
+    background: linear-gradient(180deg, rgba(255,255,255,0.28), transparent 45%, rgba(80,40,0,0.18)), #c9b18a;
+  }
+  .scene.era-2 .stand .awning::after, .scene.era-3 .stand .awning::after { background: #b89f74; }
+  .scene.era-2 .stand .aside, .scene.era-3 .stand .aside { background: linear-gradient(90deg, #b09a6f, #93805c); }
+
+  /* the farmer's clothes evolve with the times */
+  .scene.era-0 .f-hat, .scene.era-1 .f-hat, .scene.era-2 .f-hat { display: none; }
+  .scene.era-0 .f-hair, .scene.era-1 .f-hair, .scene.era-2 .f-hair { display: inline; }
+  .scene.era-0 .f-shirt { fill: #8a6a45; }   /* rough fur */
+  .scene.era-0 .f-ovr { fill: #6d4f2f; }
+  .scene.era-0 .f-pocket { fill: #5c4227; stroke: #46311c; }
+  .scene.era-0 .f-blade { fill: #9b958b; stroke: #6e6960; }   /* a flint edge */
+  .scene.era-1 .f-shirt { fill: #c98a4b; }   /* woven tunic */
+  .scene.era-1 .f-ovr { fill: #8a5a33; }
+  .scene.era-1 .f-pocket { fill: #7a4d29; stroke: #5e3a1e; }
+  .scene.era-1 .f-blade { fill: #c98f4f; stroke: #94682f; }   /* bronze */
+  .scene.era-2 .f-shirt { fill: #8a9096; }   /* iron-grey cloth */
+  .scene.era-2 .f-ovr { fill: #5a5750; }
+  .scene.era-2 .f-pocket { fill: #4c4a45; stroke: #3a3835; }
+  .scene.era-3 .f-hat { fill: #7a5228; }     /* a brown peasant hood */
+  .scene.era-3 .f-hatband { stroke: #5e3a1e; }
+  .scene.era-3 .f-shirt { fill: #5d8a3c; }   /* medieval green tunic */
+  .scene.era-3 .f-ovr { fill: #6d4620; }
+  .scene.era-3 .f-pocket { fill: #5c3a1c; stroke: #46311c; }
+  .scene.era-4 .f-hat { fill: #6b7076; }     /* an industrial flat cap */
+  .scene.era-4 .f-hatband { stroke: #4c5055; }
+  .scene.era-4 .f-shirt { fill: #d9d4c8; }
+  .scene.era-4 .f-ovr { fill: #3f5f8f; }
   .chicken { position: absolute; left: 6%; top: 50%; font-size: 24px; z-index: 3; animation: peck 2.6s ease-in-out infinite; transform-origin: bottom center; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.25)); }
   @keyframes peck {
     0%, 55%, 100% { transform: rotate(0deg); }
@@ -997,6 +1086,14 @@
       <div class="body"></div>
       <div class="door"></div>
     </div>
+    <div class="tent">
+      <div class="tcloth"></div>
+      <div class="tstreak s1"></div>
+      <div class="tstreak s2"></div>
+      <div class="tdoor"></div>
+      <div class="tpole p1"></div>
+      <div class="tpole p2"></div>
+    </div>
     <div class="tractor">🚜</div>
     <div class="coop">
       <div class="cbase"></div>
@@ -1047,28 +1144,28 @@
           </linearGradient>
         </defs>
         <g class="legL">
-          <rect x="23" y="62" width="8" height="20" rx="3.5" fill="url(#fOvr)"/>
+          <rect class="f-ovr" x="23" y="62" width="8" height="20" rx="3.5" fill="url(#fOvr)"/>
           <rect x="21.5" y="79" width="11" height="9" rx="3.5" fill="#6b4423"/>
         </g>
         <g class="legR">
-          <rect x="33" y="62" width="8" height="20" rx="3.5" fill="url(#fOvr)"/>
+          <rect class="f-ovr" x="33" y="62" width="8" height="20" rx="3.5" fill="url(#fOvr)"/>
           <rect x="31.5" y="79" width="11" height="9" rx="3.5" fill="#5b3a1e"/>
         </g>
         <g class="armL">
-          <rect x="11" y="36" width="9" height="23" rx="4.5" fill="url(#fShirt)"/>
+          <rect class="f-shirt" x="11" y="36" width="9" height="23" rx="4.5" fill="url(#fShirt)"/>
           <circle cx="15.5" cy="59" r="4.5" fill="#f2c49b"/>
         </g>
-        <rect x="15" y="30" width="34" height="17" rx="8" fill="url(#fShirt)"/>
-        <path d="M19 42 Q32 38 45 42 L45 66 Q32 71 19 66 Z" fill="url(#fOvr)"/>
-        <rect x="22" y="31" width="7" height="16" rx="3" fill="url(#fOvr)"/>
-        <rect x="35" y="31" width="7" height="16" rx="3" fill="url(#fOvr)"/>
-        <rect x="26" y="48" width="12" height="10" rx="3" fill="#3d63b5" stroke="#2c4a8c" stroke-width="1.5"/>
+        <rect class="f-shirt" x="15" y="30" width="34" height="17" rx="8" fill="url(#fShirt)"/>
+        <path class="f-ovr" d="M19 42 Q32 38 45 42 L45 66 Q32 71 19 66 Z" fill="url(#fOvr)"/>
+        <rect class="f-ovr" x="22" y="31" width="7" height="16" rx="3" fill="url(#fOvr)"/>
+        <rect class="f-ovr" x="35" y="31" width="7" height="16" rx="3" fill="url(#fOvr)"/>
+        <rect class="f-pocket" x="26" y="48" width="12" height="10" rx="3" fill="#3d63b5" stroke="#2c4a8c" stroke-width="1.5"/>
         <g class="armR">
-          <rect x="44" y="36" width="9" height="23" rx="4.5" fill="url(#fShirt)"/>
+          <rect class="f-shirt" x="44" y="36" width="9" height="23" rx="4.5" fill="url(#fShirt)"/>
           <circle cx="48.5" cy="59" r="4.5" fill="#f2c49b"/>
           <g class="axe">
             <rect x="46.8" y="38" width="3.6" height="26" rx="1.8" fill="#8b5a2b" transform="rotate(-38 48.5 59)"/>
-            <path d="M60 34 Q68 40 63 48 L56 44 Q55 37 60 34 Z" fill="#cfd6dc" stroke="#8f979e" stroke-width="1.5"/>
+            <path class="f-blade" d="M60 34 Q68 40 63 48 L56 44 Q55 37 60 34 Z" fill="#cfd6dc" stroke="#8f979e" stroke-width="1.5"/>
           </g>
         </g>
         <circle cx="32" cy="19" r="11.5" fill="#f2c49b"/>
@@ -1077,9 +1174,10 @@
         <path d="M28.5 24 Q32 27 35.5 24" stroke="#b06a3f" stroke-width="1.6" fill="none" stroke-linecap="round"/>
         <circle cx="25" cy="22.5" r="2" fill="#f0a08a" opacity="0.7"/>
         <circle cx="39" cy="22.5" r="2" fill="#f0a08a" opacity="0.7"/>
-        <path d="M20 12 Q22 3 32 3 Q42 3 44 12 Z" fill="url(#fHat)"/>
-        <ellipse cx="32" cy="12.5" rx="17.5" ry="4.5" fill="url(#fHat)"/>
-        <path d="M20 12 Q32 15.5 44 12" stroke="#b98e2f" stroke-width="2.2" fill="none"/>
+        <path class="f-hair" d="M22 14 Q24 8 32 8 Q40 8 42 14 Q42 10 32 9 Q22 10 22 14 Z" fill="#5b3a1e" display="none"/>
+        <path class="f-hat" d="M20 12 Q22 3 32 3 Q42 3 44 12 Z" fill="url(#fHat)"/>
+        <ellipse class="f-hat" cx="32" cy="12.5" rx="17.5" ry="4.5" fill="url(#fHat)"/>
+        <path class="f-hat f-hatband" d="M20 12 Q32 15.5 44 12" stroke="#b98e2f" stroke-width="2.2" fill="none"/>
       </svg>
     </div>
 
@@ -2219,6 +2317,7 @@ function advanceEra() {
   }
   state.money -= nxt.cost;
   state.era++;
+  applyEraUI();
   sndBuy();
   popMoney();
   const crops = nxt.crops.map(k => CROPS[k].emoji).join(" ");
@@ -2885,6 +2984,13 @@ function advanceSeason(now) {
   save();
 }
 
+// the world dresses for its age: tents or barns, flint or steel
+function applyEraUI() {
+  const sc = $("scene");
+  for (let i = 0; i < ERAS.length; i++) sc.classList.remove("era-" + i);
+  sc.classList.add("era-" + (state.era || 0));
+}
+
 function applySeasonUI() {
   const name = state.season ? state.season.name : "spring";
   const s = SEASONS[name];
@@ -3133,6 +3239,7 @@ $("reset").onclick = () => {
     lastNear = "?";
     applyWeatherUI();
     applySeasonUI();
+    applyEraUI();
     scheduleNextCustomer();
     renderAll();
     toast("🌅 A fresh start on a tiny farm!");
@@ -3144,6 +3251,7 @@ nextChickId = state.chickens.reduce((m, c) => Math.max(m, c.id + 1), 1);
 buildField();
 applyWeatherUI();
 applySeasonUI();
+applyEraUI();
 scheduleNextCustomer();
 renderAll();
 toast("🌾 Welcome! Grow crops, chop them down, and sell to the folks at your stand.");
