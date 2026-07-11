@@ -181,9 +181,9 @@
     box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
   }
 
-  /* plants / animals view toggle */
+  /* plants / animals view toggle (stays above the Animal Farm page) */
   .view-toggle {
-    position: absolute; top: 82px; left: 10px; z-index: 1003;
+    position: absolute; top: 82px; left: 10px; z-index: 1060;
     display: flex; border-radius: 10px; overflow: hidden;
     border: 3px solid var(--wood-dark);
     box-shadow: 0 3px 0 rgba(62,38,15,0.7);
@@ -241,8 +241,73 @@
   .mkt-row .pr { font-weight: bold; white-space: nowrap; }
   .mkt-note { font-size: 0.66rem; text-align: center; opacity: 0.9; margin-top: 2px; line-height: 1.4; }
 
-  /* chicken coop panel */
-  .coop-panel { width: 236px; }
+  /* ---------- the Animal Farm page: a whole different farmyard ---------- */
+  .barnyard {
+    position: absolute; inset: 0; z-index: 1050;
+    overflow-y: auto;
+    background:
+      linear-gradient(180deg, #8fd0f5 0%, #cfeafc 9%, #9ccb63 10%, #8fc258 55%, #85bb4f 100%);
+    padding: 12px 14px 22px;
+  }
+  .by-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
+    padding: 6px 12px; margin-bottom: 12px;
+  }
+  .by-head h2 { font-size: 1rem; text-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+  .by-corn {
+    background: linear-gradient(180deg, #fffdf4, #f3e5c0);
+    color: var(--ink); border: 2px solid var(--wood-dark); border-radius: 999px;
+    padding: 2px 10px; font-size: 0.85rem; font-weight: bold;
+    box-shadow: 0 2px 0 rgba(62,38,15,0.6);
+  }
+  .by-pens { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .pen {
+    width: 172px; padding: 10px;
+    background: radial-gradient(130% 110% at 50% 0%, #b3dc84, #8fc258 75%);
+    border: 3px solid var(--wood-dark); border-radius: 16px;
+    box-shadow: 0 4px 0 rgba(62,38,15,0.6), inset 0 2px 0 rgba(255,255,255,0.4);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    color: var(--ink); text-align: center;
+  }
+  .pen.buypen { border-style: dashed; background: rgba(255,255,255,0.3); justify-content: center; min-height: 178px; }
+  .pen .chsvg { width: 72px; height: auto; }
+  .pen .ch-head { animation: birdPeckIdle 3.2s ease-in-out infinite; }
+  .pen-bird { filter: drop-shadow(0 4px 3px rgba(0,0,0,0.25)); }
+  .pen-bird.roam { opacity: 0.45; }
+  .pen-bird.sad .chsvg { filter: saturate(0.5) brightness(0.94); }
+  .pen-name { font-size: 0.95rem; }
+  .pen-status { font-size: 0.7rem; color: #4a3a26; min-height: 1em; }
+  .fbar {
+    width: 100%; height: 12px;
+    background: rgba(40,25,8,0.45); border-radius: 6px; overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .fbar span {
+    display: block; height: 100%; border-radius: 6px;
+    background: linear-gradient(180deg, #b6e86a, #7cc63f);
+    transition: width 0.4s linear;
+  }
+  .fbar span.warn { background: linear-gradient(180deg, #ffcf66, #f5a623); }
+  .fbar span.danger { background: linear-gradient(180deg, #ff8a80, #e53935); animation: dangerBlink 0.45s ease-in-out infinite alternate; }
+  @keyframes dangerBlink { from { opacity: 0.55; } to { opacity: 1; } }
+  .pen-feedin { font-size: 0.68rem; font-weight: bold; color: #3f5222; min-height: 1.1em; }
+  .pen-btns { display: flex; gap: 6px; }
+  .pen button:not(.coop-buy) {
+    font-family: inherit; font-size: 0.7rem; font-weight: bold; color: var(--ink);
+    background: linear-gradient(180deg, #ffe082, #ffca28);
+    border: 2px solid #b8860b; border-radius: 8px;
+    padding: 4px 8px; cursor: pointer; white-space: nowrap;
+  }
+  .pen button.outb {
+    background: linear-gradient(180deg, #c5e1a5, #9ccc65);
+    border-color: #558b2f;
+  }
+  .pen .hive { position: relative; left: 0; top: 0; width: 60px; height: 68px; display: block; }
+  .by-note {
+    margin-top: 12px; text-align: center;
+    font-size: 0.72rem; line-height: 1.5; color: #33481c;
+  }
+  .by-note b { color: #1f3010; }
   .coop-row {
     display: flex; align-items: center; gap: 5px;
     background: rgba(255,246,227,0.92); color: var(--ink);
@@ -1208,7 +1273,7 @@
     </div>
     <button class="mkt-btn" id="mktBtn" title="Show market demand">📊 Market</button>
     <div class="mkt-panel" id="mktPanel" hidden></div>
-    <div class="mkt-panel coop-panel" id="coopPanel" hidden></div>
+    <div class="barnyard" id="coopPanel" hidden></div>
     <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
     <button class="action-btn idle" id="actionBtn" title="Plant / water / chop / sell">🚶</button>
     <div class="light"></div>
@@ -1910,6 +1975,7 @@ function updateNearHighlight(t) {
 }
 
 function doAction() {
+  if (!$("coopPanel").hidden) return;   // you're at the Animal Farm, not the fields
   if (Date.now() < farmer.chopUntil) return;
   const t = nearestTarget();
   if (!t) return;
@@ -2720,115 +2786,158 @@ function renderCoop() {
   const panel = $("coopPanel");
   if (panel.hidden) return;
   coopRows = new Map();
-  panel.innerHTML = "<h3>🐔 Chicken coop</h3>";
-  if (state.chickens.length === 0) {
-    panel.innerHTML += `<div class="mkt-note" style="margin-bottom:6px">No chickens yet! A fed hen roaming the farm<br>makes the soil richer (+20% growth)<br>and lays eggs you can sell.</div>`;
-  } else {
-    const cornLine = document.createElement("div");
-    cornLine.className = "mkt-note";
-    cornLine.style.marginBottom = "5px";
-    cornLine.innerHTML = `🌽 corn in barn: <b class="cornCount">?</b> — hens eat YOUR corn!`;
-    panel.appendChild(cornLine);
-    coopRows.set("corn", { status: cornLine.querySelector(".cornCount") });
-  }
-  for (const c of state.chickens) {
-    const row = document.createElement("div");
-    row.className = "coop-row";
-    row.innerHTML = `
-      <span>🐔</span>
-      <span class="cn"><b>${c.name}</b><small class="cst"></small></span>
-      <button class="feedb" title="Feed one corn from your barn">🌽×1</button>
-      <button class="outb"></button>`;
-    row.querySelector(".feedb").onclick = () => feedChicken(c.id);
-    row.querySelector(".outb").onclick = () => toggleChickenOut(c.id);
-    panel.appendChild(row);
-    coopRows.set(c.id, { status: row.querySelector(".cst"), outBtn: row.querySelector(".outb") });
-  }
+  panel.innerHTML = "";
+
+  // banner: title, corn stock, and the corn shop
+  const head = document.createElement("div");
+  head.className = "by-head wood-panel";
+  head.innerHTML = `<h2>\u{1F414}\u{1F41D} Animal Farm</h2><span class="by-corn">\u{1F33D} corn: <b class="cornCount">0</b></span>`;
   if (state.chickens.length > 0) {
     const cornBuy = document.createElement("button");
     cornBuy.className = "coop-buy corn-buy";
+    cornBuy.style.width = "auto";
     cornBuy.onclick = () => buyCorn();
-    panel.appendChild(cornBuy);
+    head.appendChild(cornBuy);
     coopRows.set("cornbuy", { status: cornBuy });
   }
-  if (state.chickens.length < CHICKEN_MAX) {
-    const buy = document.createElement("button");
-    buy.className = "coop-buy";
-    buy.textContent = `🐔 Buy chicken — $${chickenPrice()}`;
-    buy.onclick = () => buyChicken();
-    panel.appendChild(buy);
-  } else {
-    const full = document.createElement("div");
-    full.className = "mkt-note";
-    full.textContent = `The coop is full (${CHICKEN_MAX} hens).`;
-    panel.appendChild(full);
-  }
-  const note = document.createElement("div");
-  note.className = "mkt-note";
-  note.innerHTML = `Fed hens roaming the farm: <b>+20% growth</b> · feeding<br>gives an egg, and fed hens keep laying — but eggs<br>only sell by the <b>dozen (${EGG_DOZEN})</b>. A hen left hungry<br>too long <b>starves</b>! ⚠️`;
-  panel.appendChild(note);
+  panel.appendChild(head);
+  coopRows.set("corn", { status: head.querySelector(".cornCount") });
 
-  // ---- the beehive section ----
-  const bh = document.createElement("h3");
-  bh.textContent = "🐝 Beehive";
-  bh.style.marginTop = "8px";
-  panel.appendChild(bh);
-  const beeNote = document.createElement("div");
-  beeNote.className = "mkt-note";
-  if (!state.hive) {
-    const buyH = document.createElement("button");
-    buyH.className = "coop-buy";
-    buyH.textContent = `🐝 Buy beehive — $${HIVE_PRICE}`;
-    buyH.onclick = () => buyHive();
-    panel.appendChild(buyH);
-    beeNote.innerHTML = `Tended bees pollinate the crops:<br><b>all plants grow +17% faster</b> · they make 🍯 to sell.`;
-  } else {
-    const row = document.createElement("div");
-    row.className = "coop-row";
-    row.innerHTML = `
-      <span>🐝</span>
-      <span class="cn"><b>The hive</b><small class="hst"></small></span>
-      <button class="tendb">🍯 Tend $${TEND_COST}</button>`;
-    row.querySelector(".tendb").onclick = () => tendHive();
-    panel.appendChild(row);
-    coopRows.set("hive", { status: row.querySelector(".hst") });
-    beeNote.innerHTML = `Busy bees pollinate the crops: <b>+17% growth</b><br>and fill 🍯 jars. An idle hive (😴) does nothing.`;
+  const pens = document.createElement("div");
+  pens.className = "by-pens";
+  panel.appendChild(pens);
+
+  // one grassy pen per hen, with her feed bar
+  for (const c of state.chickens) {
+    const pen = document.createElement("div");
+    pen.className = "pen";
+    pen.innerHTML = `
+      <div class="pen-bird">${CHICK_SVG}</div>
+      <b class="pen-name">\u{1F414} ${c.name}</b>
+      <small class="pen-status cst"></small>
+      <div class="fbar"><span></span></div>
+      <small class="pen-feedin cfi"></small>
+      <div class="pen-btns">
+        <button class="feedb" title="Feed one corn from your barn">\u{1F33D} Feed</button>
+        <button class="outb"></button>
+      </div>`;
+    pen.querySelector(".feedb").onclick = () => feedChicken(c.id);
+    pen.querySelector(".outb").onclick = () => toggleChickenOut(c.id);
+    pens.appendChild(pen);
+    coopRows.set(c.id, {
+      status: pen.querySelector(".cst"),
+      outBtn: pen.querySelector(".outb"),
+      barFill: pen.querySelector(".fbar span"),
+      feedIn: pen.querySelector(".cfi"),
+      bird: pen.querySelector(".pen-bird"),
+    });
   }
-  panel.appendChild(beeNote);
+  if (state.chickens.length < CHICKEN_MAX) {
+    const pen = document.createElement("div");
+    pen.className = "pen buypen";
+    pen.innerHTML = `<div style="font-size:34px">\u{1F414}\u2795</div>`;
+    const btn = document.createElement("button");
+    btn.className = "coop-buy";
+    btn.textContent = `\u{1F414} Buy chicken \u2014 $${chickenPrice()}`;
+    btn.onclick = () => buyChicken();
+    pen.appendChild(btn);
+    const hint = document.createElement("small");
+    hint.className = "pen-status";
+    hint.textContent = "fed roaming hens: +20% growth & eggs";
+    pen.appendChild(hint);
+    pens.appendChild(pen);
+  }
+
+  // the hive gets a pen of its own
+  const hp = document.createElement("div");
+  hp.className = "pen";
+  if (!state.hive) {
+    hp.classList.add("buypen");
+    hp.innerHTML = `<div style="font-size:34px">\u{1F41D}\u2795</div>`;
+    const btn = document.createElement("button");
+    btn.className = "coop-buy";
+    btn.textContent = `\u{1F41D} Buy beehive \u2014 $${HIVE_PRICE}`;
+    btn.onclick = () => buyHive();
+    hp.appendChild(btn);
+    const hint = document.createElement("small");
+    hint.className = "pen-status";
+    hint.textContent = "tended bees: +17% growth & honey";
+    hp.appendChild(hint);
+  } else {
+    hp.innerHTML = `
+      <div class="pen-bird"><div class="hive"><div class="hbox"></div><div class="hhole"></div><div class="hroof"></div></div></div>
+      <b class="pen-name">\u{1F41D} The hive</b>
+      <small class="pen-status hst"></small>
+      <div class="fbar"><span></span></div>
+      <small class="pen-feedin hfi"></small>
+      <div class="pen-btns"><button class="tendb">\u{1F36F} Tend $${TEND_COST}</button></div>`;
+    hp.querySelector(".tendb").onclick = () => tendHive();
+    coopRows.set("hive", {
+      status: hp.querySelector(".hst"),
+      barFill: hp.querySelector(".fbar span"),
+      feedIn: hp.querySelector(".hfi"),
+    });
+  }
+  pens.appendChild(hp);
+
+  const note = document.createElement("div");
+  note.className = "by-note";
+  note.innerHTML = `Hens eat <b>your corn</b> (\u{1F33D}\u00D71 a feed, +1 egg on the spot) \u00B7 eggs sell by the <b>dozen (${EGG_DOZEN})</b> \u00B7 a hen left hungry too long <b>starves!</b><br>Tap \u{1F331} Plants (top-left) to head back to the fields.`;
+  panel.appendChild(note);
   updateCoopStatus();
 }
 
-// cheap per-tick refresh of timers and buttons (no rebuild, taps stay safe)
+function fmtClock(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+// cheap per-tick refresh of the bars, timers and buttons (no rebuild, taps stay safe)
 function updateCoopStatus() {
   const now = Date.now();
   for (const c of state.chickens) {
     const r = coopRows.get(c.id);
     if (!r) continue;
-    if (isFed(c)) {
-      const s = Math.ceil((c.fedUntil - now) / 1000);
-      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · fed ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-    } else if (now - c.fedUntil > STARVE_MS * 0.5) {
-      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · ⚠️ STARVING!`;
-    } else {
-      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · 🍽️ hungry`;
+    const left = (c.fedUntil || 0) - now;
+    const frac = Math.max(0, Math.min(1, left / FED_MS));
+    if (r.barFill) {
+      r.barFill.className = frac > 0.4 ? "" : frac > 0 ? "warn" : "danger";
+      r.barFill.style.width = (frac > 0 ? Math.max(3, Math.round(frac * 100)) : 100) + "%";
     }
-    r.outBtn.textContent = c.out ? "🏠 Call back" : "🌱 Send out";
+    if (r.feedIn) {
+      if (left > 0) r.feedIn.textContent = `feed again in ${fmtClock(left)}`;
+      else if (now - c.fedUntil <= STARVE_MS * 0.5) r.feedIn.textContent = "\u{1F37D}\uFE0F hungry \u2014 feed now!";
+      else r.feedIn.textContent = "\u26A0\uFE0F STARVING!";
+    }
+    r.status.textContent = c.out ? "\u{1F331} out on the farm" : "\u{1F3E0} in the yard";
+    if (r.outBtn) r.outBtn.textContent = c.out ? "\u{1F3E0} Call back" : "\u{1F331} Send out";
+    if (r.bird) {
+      r.bird.classList.toggle("roam", c.out);
+      r.bird.classList.toggle("sad", left <= 0);
+    }
   }
   const cc = coopRows.get("corn");
   if (cc) cc.status.textContent = state.barn.corn || 0;
   const cb = coopRows.get("cornbuy");
   if (cb) {
     cb.status.textContent = inSeason("corn")
-      ? `🌽 Buy corn — $${cornPrice()}`
-      : `🌽 Emergency corn — $${cornPrice()} (out of season!)`;
+      ? `\u{1F33D} Buy corn \u2014 $${cornPrice()}`
+      : `\u{1F33D} Emergency corn \u2014 $${cornPrice()} (out of season!)`;
   }
   const hr = coopRows.get("hive");
   if (hr && state.hive) {
-    if (hiveActive()) {
-      const s = Math.ceil((state.hive.tendedUntil - now) / 1000);
-      hr.status.textContent = `🐝 buzzing · tended ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    const left = state.hive.tendedUntil - now;
+    const frac = Math.max(0, Math.min(1, left / TEND_MS));
+    if (hr.barFill) {
+      hr.barFill.className = frac > 0.4 ? "" : frac > 0 ? "warn" : "danger";
+      hr.barFill.style.width = (frac > 0 ? Math.max(3, Math.round(frac * 100)) : 100) + "%";
+    }
+    if (left > 0) {
+      hr.status.textContent = "\u{1F41D} buzzing";
+      hr.feedIn.textContent = `tend again in ${fmtClock(left)}`;
     } else {
-      hr.status.textContent = "😴 idle — tend the hive!";
+      hr.status.textContent = "\u{1F634} idle \u2014 tend the hive!";
+      hr.feedIn.textContent = "\u{1F36F} tend the hive now!";
     }
   }
 }
@@ -3235,7 +3344,7 @@ const stickEl = $("stick");
 const knobEl = $("knob");
 
 sceneEl.addEventListener("touchstart", (e) => {
-  if (e.target.closest(".action-btn, .cust, .mkt-btn, .mkt-panel, .view-toggle, .coop-panel")) return;
+  if (e.target.closest(".action-btn, .cust, .mkt-btn, .mkt-panel, .view-toggle, .barnyard")) return;
   const r = sceneEl.getBoundingClientRect();
   for (const t of e.changedTouches) {
     if (farmer.joy === null) {
@@ -3297,7 +3406,7 @@ sceneEl.addEventListener("touchcancel", endJoy);
 
 // tap/click the grass to walk there
 sceneEl.addEventListener("click", (e) => {
-  if (e.target.closest(".action-btn, .spot, .cust, .mkt-btn, .mkt-panel, .view-toggle, .coop-panel")) return;
+  if (e.target.closest(".action-btn, .spot, .cust, .mkt-btn, .mkt-panel, .view-toggle, .barnyard")) return;
   const r = sceneEl.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width * 100;
   const y = (e.clientY - r.top) / r.height * 100;
