@@ -213,9 +213,10 @@
   }
   .mkt-btn:hover { transform: scale(1.05); }
   .mkt-btn.open { background: linear-gradient(180deg, #ffe082, #f5b81e); color: var(--ink); border-color: #8d6708; }
+  .tools-btn { top: 150px; }
   .mkt-panel {
-    position: absolute; top: 150px; left: 10px; z-index: 1003;
-    width: 218px; max-height: calc(100% - 162px);
+    position: absolute; top: 184px; left: 10px; z-index: 1003;
+    width: 218px; max-height: calc(100% - 196px);
     overflow-y: auto;
     background:
       repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 2px, transparent 2px 60px),
@@ -593,6 +594,65 @@
     background: #fdf3da; border: 3px solid #7e2517; border-radius: 50% 50% 0 0; z-index: 1;
   }
   .tractor { position: absolute; left: 15%; top: 28%; font-size: 30px; z-index: 2; transform: scaleX(-1); filter: drop-shadow(0 3px 3px rgba(0,0,0,0.25)); display: none; }
+
+  .eprop { position: absolute; z-index: 2; display: none; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.2)); }
+  .scene.era-0 .ep-fire, .scene.era-0 .ep-bones { display: block; }
+  .scene.era-1 .ep-jars { display: block; }
+  .scene.era-2 .ep-anvil { display: block; }
+  .scene.era-3 .ep-castle { display: block; }
+  .scene.era-4 .ep-factory { display: block; }
+  .scene.era-5 .ep-house { display: block; }
+
+  /* the light of the age: ancient haze, industrial smog */
+  .scene.era-0 .light, .scene.era-1 .light {
+    background:
+      radial-gradient(130% 90% at 74% 8%, rgba(255,236,170,0.3), transparent 55%),
+      linear-gradient(180deg, rgba(214,166,90,0.10), rgba(160,110,50,0.12)),
+      radial-gradient(145% 125% at 50% 55%, transparent 62%, rgba(40,20,5,0.2) 100%);
+  }
+  .scene.era-4 .light {
+    background:
+      radial-gradient(130% 90% at 74% 8%, rgba(255,246,190,0.14), transparent 55%),
+      linear-gradient(180deg, rgba(90,95,105,0.14), rgba(70,75,85,0.08)),
+      radial-gradient(145% 125% at 50% 55%, transparent 62%, rgba(30,30,35,0.2) 100%);
+  }
+
+  /* the UI itself is built from the materials of the age */
+  body.era-0 .wood-panel {
+    background:
+      radial-gradient(3px 3px at 22px 9px, rgba(255,255,255,0.12) 40%, transparent 60%),
+      radial-gradient(2px 2px at 64px 20px, rgba(0,0,0,0.2) 40%, transparent 60%),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.07) 0 2px, transparent 2px 74px),
+      linear-gradient(180deg, #a8a29a, #8b857c 30%, #6f6a62);
+    border-color: #45413b;
+  }
+  body.era-1 .wood-panel {
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 70px),
+      linear-gradient(180deg, #cf9058, #b3673f 30%, #96522f);
+    border-color: #63331a;
+  }
+  body.era-2 .wood-panel {
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0 2px, transparent 2px 70px),
+      linear-gradient(180deg, #7d766d, #605a52 30%, #49443e);
+    border-color: #26231f;
+  }
+  body.era-3 .wood-panel {
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 70px),
+      linear-gradient(180deg, #96703c, #7d5a2b 30%, #64461f);
+    border-color: #38260e;
+  }
+  body.era-4 .wood-panel {
+    background:
+      radial-gradient(2.5px 2.5px at 14px 8px, rgba(255,255,255,0.35) 35%, transparent 55%),
+      radial-gradient(2.5px 2.5px at 14px 8px, rgba(0,0,0,0.25) 55%, transparent 75%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 90px),
+      linear-gradient(180deg, #98a1ac, #717984 30%, #575f69);
+    background-size: 90px 100%, 90px 100%, auto, auto;
+    border-color: #2e333a;
+  }
 
   /* ============ the look of each age ============ */
   /* Stone & Bronze: a hide tent instead of a barn */
@@ -1178,6 +1238,13 @@
       <div class="tpole p2"></div>
     </div>
     <div class="tractor">🚜</div>
+    <div class="eprop ep-fire" style="left:13.5%; top:31%; font-size:22px;">🔥</div>
+    <div class="eprop ep-bones" style="left:20%; top:34%; font-size:15px;">🦴</div>
+    <div class="eprop ep-jars" style="left:13.5%; top:31.5%; font-size:20px;">🏺</div>
+    <div class="eprop ep-anvil" style="left:15%; top:30.5%; font-size:19px;">⚒️</div>
+    <div class="eprop ep-castle" style="left:55%; top:17%; font-size:42px;">🏰</div>
+    <div class="eprop ep-factory" style="left:54%; top:16.5%; font-size:44px;">🏭</div>
+    <div class="eprop ep-house" style="left:56%; top:20%; font-size:34px;">🏡</div>
     <div class="coop">
       <div class="cbase"></div>
       <div class="chole"></div>
@@ -1272,7 +1339,9 @@
       <button class="vt-btn" id="animalsBtn">🐔 Animals</button>
     </div>
     <button class="mkt-btn" id="mktBtn" title="Show market demand">📊 Market</button>
+    <button class="mkt-btn tools-btn" id="toolsBtn" title="Great inventions of your age">🛠️ Tools</button>
     <div class="mkt-panel" id="mktPanel" hidden></div>
+    <div class="mkt-panel" id="toolsPanel" hidden></div>
     <div class="barnyard" id="coopPanel" hidden></div>
     <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
     <button class="action-btn idle" id="actionBtn" title="Plant / water / chop / sell">🚶</button>
@@ -1324,6 +1393,26 @@ const ERAS = [
 ];
 function era() { return ERAS[state.era || 0]; }
 function chopsNeeded(c) { return Math.max(1, c.chops - era().chopBonus); }
+
+// ---------------- Tools of the ages ----------------
+// each age offers one great invention to save up for — bought once, kept forever
+const TOOLS = {
+  flint:   { era: 0, icon: "🪓", name: "Flint Sickle",  price: 60,
+             desc: "Every harvest gives ×2 crops" },
+  plough:  { era: 1, icon: "🐂", name: "Bronze Plough", price: 200,
+             desc: "Seeds cost 30% less to plant" },
+  scythe:  { era: 2, icon: "⚔️", name: "Iron Scythe",   price: 600,
+             desc: "Every harvest gives ×3 crops" },
+  mill:    { era: 3, icon: "🏰", name: "Windmill",      price: 1800,
+             desc: "Customers pay 30% more" },
+  drill:   { era: 4, icon: "⚙️", name: "Seed Drill",    price: 4500,
+             desc: "All crops grow 30% faster" },
+  combine: { era: 5, icon: "🚜", name: "Combine",       price: 12000,
+             desc: "Every harvest gives ×5 crops" },
+};
+function hasTool(k) { return !!(state.tools && state.tools[k]); }
+function yieldMult() { return hasTool("combine") ? 5 : hasTool("scythe") ? 3 : hasTool("flint") ? 2 : 1; }
+function plantCost(c) { return Math.max(1, Math.round(c.cost * (hasTool("plough") ? 0.7 : 1))); }
 
 // grow times scale with rarity: commons are quick, legendaries are a real wait.
 // seasons follow real life: tomatoes love spring/summer, pumpkins are an autumn
@@ -1581,6 +1670,7 @@ function freshState() {
     hive: null,              // { tendedUntil, honeyAt } once you own the beehive
     water: 0,                // waterings left in the can
     era: 0,                  // index into ERAS — everyone starts in the Stone Age
+    tools: {},               // great inventions owned: { flint: true, ... }
     weather: null,           // { kind, until, next } — rolled on first tick
     season: null,            // { name, until } — starts in spring on first tick
     demand: null,            // { crop: "hot"|"high"|"normal"|"low" } — rolled on first tick
@@ -1618,6 +1708,8 @@ function load() {
         if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
         // older saves don't track crop rotation yet
         if (!Array.isArray(s.lastCrop)) s.lastCrop = Array.from({ length: GRID }, () => null);
+        // older saves predate tools
+        if (!s.tools || typeof s.tools !== "object") s.tools = {};
         // older saves have no chickens or beehive yet
         if (!Array.isArray(s.chickens)) s.chickens = [];
         if (s.hive === undefined) s.hive = null;
@@ -2171,8 +2263,8 @@ function renderSeeds() {
     btn.innerHTML = locked
       ? `<span class="big">🔒</span>${ERAS[c.era].icon} age`
       : off
-        ? `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:#1565c0">💤 ${seasonIcons(key)}</small>`
-        : `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:${dm.color}">${dm.label}</small>`;
+        ? `<span class="big">${c.emoji}</span>$${plantCost(c)}<small style="color:#1565c0">💤 ${seasonIcons(key)}</small>`
+        : `<span class="big">${c.emoji}</span>$${plantCost(c)}<small style="color:${dm.color}">${dm.label}</small>`;
     // rarity shows as the chip's border and a stripe under the price
     btn.style.borderColor = rar.color;
     if (!locked) btn.style.boxShadow = `0 2px 0 rgba(90,60,25,0.5), 0 4px 6px rgba(60,35,10,0.2), inset 0 -3px 0 ${rar.color}`;
@@ -2218,19 +2310,20 @@ function plantAt(i) {
     toast(`${c.emoji} ${c.name} won't grow in ${SEASON_ICON[currentSeason()]} ${SEASONS[currentSeason()].name} — it grows in ${seasonIcons(selectedSeed)}`);
     return;
   }
-  if (state.money < c.cost) {
+  const cost = plantCost(c);
+  if (state.money < cost) {
     sndNope();
-    toast(`Need $${c.cost} to plant ${c.name}!`);
+    toast(`Need $${cost} to plant ${c.name}!`);
     return;
   }
-  state.money -= c.cost;
+  state.money -= cost;
   // planting the same crop where it just grew tires the soil — rotate!
   const tired = state.lastCrop[i] === selectedSeed;
   state.plots[i] = { crop: selectedSeed, grown: 0, tired: tired || undefined };
   state.lastCrop[i] = selectedSeed;
   sndPlant();
   const { x, y } = spotScenePos(i);
-  sceneFloater(`-$${c.cost}`, x, y, "#c62828");
+  sceneFloater(`-$${cost}`, x, y, "#c62828");
   if (tired) {
     sceneFloater("🐌 tired soil", x, y - 6, "#8d6e63");
     toast(`😴 This soil just grew ${c.emoji} ${c.name} — it's tired! Growth is 50% slower. Rotate your crops!`);
@@ -2330,9 +2423,10 @@ function chopAt(i) {
     return;
   }
 
-  // timber! the crop falls and goes in the barn
+  // timber! the crop falls and goes in the barn — good tools multiply the haul
+  const gain = yieldMult();
   state.plots[i] = null;
-  state.barn[p.crop] = (state.barn[p.crop] || 0) + 1;
+  state.barn[p.crop] = (state.barn[p.crop] || 0) + gain;
   const ghost = document.createElement("div");
   ghost.className = "chopped";
   ghost.textContent = c.emoji;
@@ -2342,7 +2436,7 @@ function chopAt(i) {
   $("scene").appendChild(ghost);
   setTimeout(() => ghost.remove(), 700);
   sndHarvest();
-  sceneFloater(`+1 ${c.emoji}`, x, y);
+  sceneFloater(`+${gain} ${c.emoji}`, x, y);
   lastNear = "?";
   save();
   renderHeader();
@@ -2405,7 +2499,11 @@ function advanceEra() {
   sndBuy();
   popMoney();
   const crops = nxt.crops.map(k => CROPS[k].emoji).join(" ");
+  // the village celebrates a new age with gifts
+  state.water += nxt.canUses;
+  for (const k of nxt.crops) state.barn[k] = (state.barn[k] || 0) + 2;
   toast(`${nxt.icon} Welcome to the ${nxt.name}! ${nxt.blurb}`);
+  toast(`🎁 Celebration gifts: a full ${nxt.canName} (+${nxt.canUses} water) and 2 of each new crop!`);
   toast(`🌱 New crops: ${crops} · 💧 ${nxt.canName} holds ${nxt.canUses}` +
         (nxt.chopBonus > ERAS[state.era - 1].chopBonus ? " · 🪓 sharper tools chop faster!" : ""));
   lastNear = "?";
@@ -2413,6 +2511,7 @@ function advanceEra() {
   renderHeader();
   renderSeeds();
   renderMarket();
+  renderTools();
 }
 
 function buyLand() {
@@ -2466,7 +2565,7 @@ function spawnCustomer() {
     crop,
     qty,
     // the price is locked in when they join the queue
-    pay: Math.round(itemDef(crop).sell * qty * DEMAND[demandOf(crop)].priceMult),
+    pay: Math.round(itemDef(crop).sell * qty * DEMAND[demandOf(crop)].priceMult * (hasTool("mill") ? 1.3 : 1)),
     arrivedAt: Date.now(),
     px: 106, py: 99,         // walks in from the bottom-right corner
   });
@@ -2541,6 +2640,59 @@ function rollDemand(now) {
   renderSeeds();
   renderMarket();
   save();
+}
+
+// the tools board: one great invention per age
+function renderTools() {
+  const panel = $("toolsPanel");
+  if (panel.hidden) return;
+  panel.innerHTML = "<h3>\u{1F6E0}\uFE0F Great inventions</h3>" + Object.entries(TOOLS).map(([key, t]) => {
+    const owned = hasTool(key);
+    const locked = t.era > state.era;
+    return `<div class="mkt-row${locked ? " locked" : ""}" data-tool="${key}">
+      <span class="nm">${t.icon} <b>${t.name}</b><br><small>${t.desc}</small></span>
+      ${owned
+        ? `<b style="color:#2e7d32">\u2714 owned</b>`
+        : locked
+          ? `<b style="color:#8d7a5e">\u{1F512} ${ERAS[t.era].icon}</b>`
+          : `<button class="toolbuy">$${t.price}</button>`}
+    </div>`;
+  }).join("") + `<div class="mkt-note">Each age brings one invention.<br>Buy it once \u2014 keep it forever.</div>`;
+  for (const btn of panel.querySelectorAll(".toolbuy")) {
+    btn.onclick = (e) => buyTool(e.target.closest(".mkt-row").dataset.tool);
+  }
+}
+
+function buyTool(key) {
+  const t = TOOLS[key];
+  if (!t || hasTool(key) || t.era > state.era) return;
+  if (state.money < t.price) {
+    sndNope();
+    toast(`Need $${t.price} for the ${t.name}!`);
+    return;
+  }
+  state.money -= t.price;
+  state.tools[key] = true;
+  sndBuy();
+  popMoney();
+  toast(`${t.icon} ${t.name}! ${t.desc}.`);
+  lastNear = "?";
+  save();
+  renderHeader();
+  renderSeeds();
+  renderTools();
+}
+
+function toggleTools(open) {
+  const panel = $("toolsPanel");
+  panel.hidden = open === undefined ? !panel.hidden : !open;
+  if (!panel.hidden) {
+    $("mktPanel").hidden = true;
+    $("mktBtn").classList.remove("open");
+    setView(false);
+  }
+  $("toolsBtn").classList.toggle("open", !panel.hidden);
+  renderTools();
 }
 
 // the market board: every crop's demand and today's price, hot deals first
@@ -3167,7 +3319,12 @@ function setView(animals) {
   $("plantsBtn").classList.toggle("active", !animals);
   $("animalsBtn").classList.toggle("active", animals);
   $("coopPanel").hidden = !animals;
-  if (animals) { $("mktPanel").hidden = true; $("mktBtn").classList.remove("open"); }
+  if (animals) {
+    $("mktPanel").hidden = true;
+    $("mktBtn").classList.remove("open");
+    $("toolsPanel").hidden = true;
+    $("toolsBtn").classList.remove("open");
+  }
   renderCoop();
 }
 
@@ -3186,9 +3343,10 @@ function advanceSeason(now) {
 
 // the world dresses for its age: tents or barns, flint or steel
 function applyEraUI() {
-  const sc = $("scene");
-  for (let i = 0; i < ERAS.length; i++) sc.classList.remove("era-" + i);
-  sc.classList.add("era-" + (state.era || 0));
+  for (const el of [$("scene"), document.body]) {
+    for (let i = 0; i < ERAS.length; i++) el.classList.remove("era-" + i);
+    el.classList.add("era-" + (state.era || 0));
+  }
 }
 
 function applySeasonUI() {
@@ -3226,7 +3384,8 @@ function tick() {
     if (!inSeason(p.crop)) continue;   // out of season: dormant, and weather leaves it be
     if (!p.ail) {
       p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1) * (p.tired ? 0.5 : 1)
-                    * (flockBoosting() ? CHICK_BOOST : 1) * (hiveActive() ? BEE_BOOST : 1);
+                    * (flockBoosting() ? CHICK_BOOST : 1) * (hiveActive() ? BEE_BOOST : 1)
+                    * (hasTool("drill") ? 1.3 : 1);
       // weather can strike a healthy growing plant (not one just helped)
       if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
         p.ail = W.ail;
@@ -3415,7 +3574,8 @@ sceneEl.addEventListener("click", (e) => {
 });
 
 $("actionBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doAction(); });
-$("mktBtn").addEventListener("click", () => { toggleMarket(); if (!$("mktPanel").hidden) setView(false); });
+$("mktBtn").addEventListener("click", () => { toggleMarket(); if (!$("mktPanel").hidden) { setView(false); toggleTools(false); } });
+$("toolsBtn").addEventListener("click", () => toggleTools());
 $("plantsBtn").addEventListener("click", () => setView(false));
 $("animalsBtn").addEventListener("click", () => setView(true));
 
