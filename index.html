@@ -181,9 +181,28 @@
     box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
   }
 
+  /* plants / animals view toggle */
+  .view-toggle {
+    position: absolute; top: 82px; left: 10px; z-index: 1003;
+    display: flex; border-radius: 10px; overflow: hidden;
+    border: 3px solid var(--wood-dark);
+    box-shadow: 0 3px 0 rgba(62,38,15,0.7);
+  }
+  .vt-btn {
+    font-family: inherit; cursor: pointer; border: none;
+    background: linear-gradient(180deg, #b8834c, var(--plank-dark));
+    color: var(--cream); font-weight: bold; font-size: 0.72rem;
+    padding: 4px 8px;
+  }
+  .vt-btn + .vt-btn { border-left: 2px solid var(--wood-dark); }
+  .vt-btn.active {
+    background: linear-gradient(180deg, #ffe082, #f5b81e);
+    color: var(--ink);
+  }
+
   /* market demand board — always one tap away */
   .mkt-btn {
-    position: absolute; top: 82px; left: 10px; z-index: 1003;
+    position: absolute; top: 116px; left: 10px; z-index: 1003;
     font-family: inherit; cursor: pointer;
     background: linear-gradient(180deg, #b8834c, var(--plank-dark));
     border: 3px solid var(--wood-dark); border-radius: 10px;
@@ -195,8 +214,8 @@
   .mkt-btn:hover { transform: scale(1.05); }
   .mkt-btn.open { background: linear-gradient(180deg, #ffe082, #f5b81e); color: var(--ink); border-color: #8d6708; }
   .mkt-panel {
-    position: absolute; top: 116px; left: 10px; z-index: 1003;
-    width: 218px; max-height: calc(100% - 128px);
+    position: absolute; top: 150px; left: 10px; z-index: 1003;
+    width: 218px; max-height: calc(100% - 162px);
     overflow-y: auto;
     background:
       repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 2px, transparent 2px 60px),
@@ -221,6 +240,70 @@
   .mkt-row b { font-size: 0.74rem; white-space: nowrap; }
   .mkt-row .pr { font-weight: bold; white-space: nowrap; }
   .mkt-note { font-size: 0.66rem; text-align: center; opacity: 0.9; margin-top: 2px; line-height: 1.4; }
+
+  /* chicken coop panel */
+  .coop-panel { width: 236px; }
+  .coop-row {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(255,246,227,0.92); color: var(--ink);
+    border-radius: 8px; padding: 4px 7px; margin-bottom: 4px;
+    font-size: 0.76rem;
+  }
+  .coop-row .cn { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+  .coop-row .cn small { display: block; font-size: 0.64rem; color: #6d5b45; }
+  .coop-row button {
+    font-family: inherit; font-size: 0.68rem; font-weight: bold; color: var(--ink);
+    background: linear-gradient(180deg, #ffe082, #ffca28);
+    border: 2px solid #b8860b; border-radius: 7px;
+    padding: 3px 6px; cursor: pointer; white-space: nowrap;
+  }
+  .coop-row button.outb {
+    background: linear-gradient(180deg, #c5e1a5, #9ccc65);
+    border-color: #558b2f;
+  }
+  .coop-buy {
+    width: 100%; font-family: inherit; font-size: 0.78rem; font-weight: bold; color: var(--cream);
+    background: linear-gradient(180deg, #c08c50, #8a5c2c);
+    border: 2px solid var(--wood-dark); border-radius: 8px;
+    padding: 5px; cursor: pointer; margin-bottom: 4px;
+  }
+  .coop-buy:disabled { filter: grayscale(0.8); opacity: 0.6; cursor: not-allowed; }
+
+  /* the coop hut and your hens in the world */
+  .coop {
+    position: absolute; left: 5.5%; top: 50%; width: 66px; height: 54px; z-index: 3;
+    filter: drop-shadow(0 4px 3px rgba(20,40,10,0.25));
+  }
+  .coop .croof {
+    position: absolute; top: 0; left: -4px; right: -4px; height: 24px;
+    background: linear-gradient(180deg, #8d5b33, #6d4322);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  }
+  .coop .cbase {
+    position: absolute; bottom: 0; left: 4px; right: 4px; height: 32px;
+    background: linear-gradient(180deg, #b07c46, #8a5c2c);
+    border: 3px solid var(--wood-dark); border-radius: 0 0 5px 5px;
+  }
+  .coop .chole {
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 20px; background: #3d2812;
+    border-radius: 50% 50% 0 0;
+  }
+  .chick { position: absolute; pointer-events: none; }
+  .chick .cbody2 { display: block; font-size: 24px; line-height: 1; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.25)); }
+  .chick.moving .cbody2 { animation: hop 0.25s ease-in-out infinite alternate; }
+  .chick:not(.moving) .cbody2 { animation: peck 2.6s ease-in-out infinite; transform-origin: bottom center; }
+  .chick .ctag {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; line-height: 1;
+    animation: ailPulse 0.9s ease-in-out infinite alternate;
+  }
+  .chick .cshadow {
+    position: absolute; left: 50%; bottom: -2px;
+    width: 22px; height: 7px; transform: translateX(-50%);
+    background: radial-gradient(ellipse, rgba(0,0,0,0.25), rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+  }
 
   /* the land itself changes with the season */
   .scene.season-summer .grass { filter: hue-rotate(-9deg) saturate(1.05); }
@@ -858,7 +941,11 @@
       <div class="door"></div>
     </div>
     <div class="tractor">🚜</div>
-    <div class="chicken">🐓</div>
+    <div class="coop">
+      <div class="cbase"></div>
+      <div class="chole"></div>
+      <div class="croof"></div>
+    </div>
     <div class="flower" style="left:8%;  top:70%; font-size:18px;">🌻</div>
     <div class="flower" style="left:4%;  top:88%; font-size:16px;">🌼</div>
     <div class="flower" style="left:82%; top:44%; font-size:14px;">🌷</div>
@@ -936,8 +1023,13 @@
     <div class="wx" id="wx"></div>
     <div class="wxbadge" id="wxBadge">☀️ Sunny</div>
     <div class="seasonbadge" id="seasonBadge">🌸 Spring</div>
+    <div class="view-toggle">
+      <button class="vt-btn active" id="plantsBtn">🌱 Plants</button>
+      <button class="vt-btn" id="animalsBtn">🐔 Animals</button>
+    </div>
     <button class="mkt-btn" id="mktBtn" title="Show market demand">📊 Market</button>
     <div class="mkt-panel" id="mktPanel" hidden></div>
+    <div class="mkt-panel coop-panel" id="coopPanel" hidden></div>
     <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
     <button class="action-btn idle" id="actionBtn" title="Plant / water / chop / sell">🚶</button>
     <div class="light"></div>
@@ -1008,6 +1100,23 @@ const CROPS = {
   starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, era: 5, chops: 3, seasons: ["spring","summer","autumn","winter"] },
 };
 const SEASON_ICON = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
+
+// ---------------- Chickens ----------------
+// buy hens, keep them fed, and send them out to roam: a fed roaming flock
+// fertilizes the soil (+20% growth for every plant) and lays eggs to sell
+const CHICKEN_MAX = 4;
+const FEED_COST = 5;
+const FED_MS = 180000;         // one feed keeps a hen happy for 3 minutes
+const CHICK_BOOST = 1.2;       // soil boost while any fed hen roams the farm
+const EGG_MS = [60000, 100000]; // fed hens lay an egg every 60-100s
+const CHICK_NAMES = ["Henrietta", "Clucky", "Nugget", "Peep", "Omelette", "Doris"];
+function chickenPrice() { return Math.round(60 * Math.pow(1.6, state.chickens.length)); }
+
+// things that can be sold but aren't planted (eggs!)
+const EXTRAS = {
+  egg: { name: "Egg", emoji: "🥚", sell: 9, rarity: "common" },
+};
+function itemDef(k) { return CROPS[k] || EXTRAS[k]; }
 
 function currentSeason() {
   return state && state.season ? state.season.name : "spring";
@@ -1210,6 +1319,7 @@ function freshState() {
     plots: Array.from({ length: GRID }, () => null),
     lastCrop: Array.from({ length: GRID }, () => null),  // for crop rotation: what grew here last
     barn: {},                // harvested crops: { wheat: 3, ... }
+    chickens: [],            // { id, name, fedUntil, out, eggAt, px, py }
     water: 0,                // waterings left in the can
     era: 0,                  // index into ERAS — everyone starts in the Stone Age
     weather: null,           // { kind, until, next } — rolled on first tick
@@ -1249,6 +1359,8 @@ function load() {
         if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
         // older saves don't track crop rotation yet
         if (!Array.isArray(s.lastCrop)) s.lastCrop = Array.from({ length: GRID }, () => null);
+        // older saves have no chickens yet
+        if (!Array.isArray(s.chickens)) s.chickens = [];
         // older saves predate the ages — grant an era matching their old progress
         if (typeof s.era !== "number") {
           const p = s.plotsOwned || 4;
@@ -1672,7 +1784,7 @@ function updateFarmer(dt) {
 const custEls = new Map();   // id -> { el, barFill }
 
 function buildCustomerEl(cust) {
-  const c = CROPS[cust.crop];
+  const c = itemDef(cust.crop);
   const shirt = SHIRTS[cust.id % SHIRTS.length];
   const pants = ["#55524e","#3f5f8f","#6d4620"][cust.id % 3];
   const el = document.createElement("div");
@@ -1754,7 +1866,7 @@ function renderHeader() {
     for (const [crop, n] of entries) {
       const d = document.createElement("span");
       d.className = "item";
-      d.textContent = `${CROPS[crop].emoji}×${n}`;
+      d.textContent = `${itemDef(crop).emoji}×${n}`;
       inv.appendChild(d);
     }
   }
@@ -1976,7 +2088,7 @@ function serve(id) {
   const idx = customers.findIndex(c => c.id === id);
   if (idx === -1) return;
   const cust = customers[idx];
-  const c = CROPS[cust.crop];
+  const c = itemDef(cust.crop);
   if ((state.barn[cust.crop] || 0) < cust.qty) {
     sndNope();
     toast(`${cust.face} wants ${cust.qty}× ${c.emoji} — you don't have enough yet!`);
@@ -2071,6 +2183,10 @@ function spawnCustomer() {
     const w = Math.max(1, Math.round(base * DEMAND[demandOf(k)].freqMult * seasonal * 4));
     for (let j = 0; j < w; j++) weighted.push(k);
   });
+  // village folk love fresh eggs once you keep chickens
+  if (state.chickens.length > 0) {
+    for (let j = 0; j < options.length * 3; j++) weighted.push("egg");
+  }
   const crop = weighted[Math.floor(Math.random() * weighted.length)];
   const qty = 1 + Math.floor(Math.random() * 3);
   customers.push({
@@ -2079,7 +2195,7 @@ function spawnCustomer() {
     crop,
     qty,
     // the price is locked in when they join the queue
-    pay: Math.round(CROPS[crop].sell * qty * DEMAND[demandOf(crop)].priceMult),
+    pay: Math.round(itemDef(crop).sell * qty * DEMAND[demandOf(crop)].priceMult),
     arrivedAt: Date.now(),
     px: 106, py: 99,         // walks in from the bottom-right corner
   });
@@ -2184,6 +2300,201 @@ function toggleMarket(open) {
   renderMarket();
 }
 
+// ---------------- Chickens ----------------
+const chickEls = new Map();   // id -> element
+let coopRows = new Map();     // id -> { status, feedBtn, outBtn }
+let nextChickId = 1;
+
+function chickHome(idx) {
+  return { x: 5 + (idx % 2) * 4.5, y: 61 + Math.floor(idx / 2) * 4 };
+}
+function isFed(c) { return Date.now() < (c.fedUntil || 0); }
+function flockBoosting() { return state.chickens.some(c => c.out && isFed(c)); }
+
+function buyChicken() {
+  if (state.chickens.length >= CHICKEN_MAX) return;
+  const price = chickenPrice();
+  if (state.money < price) {
+    sndNope();
+    toast(`Need $${price} for a chicken!`);
+    return;
+  }
+  state.money -= price;
+  const idx = state.chickens.length;
+  const home = chickHome(idx);
+  const name = CHICK_NAMES[idx % CHICK_NAMES.length];
+  state.chickens.push({
+    id: nextChickId++, name,
+    fedUntil: Date.now() + FED_MS,     // arrives fed and happy
+    out: false,
+    eggAt: Date.now() + EGG_MS[0] + Math.random() * (EGG_MS[1] - EGG_MS[0]),
+    px: home.x, py: home.y,
+  });
+  sndBuy();
+  toast(`🐔 ${name} joins the farm! Feed her and send her out to fertilize the soil.`);
+  save();
+  renderHeader();
+  renderCoop();
+}
+
+function feedChicken(id) {
+  const c = state.chickens.find(k => k.id === id);
+  if (!c) return;
+  if (state.money < FEED_COST) {
+    sndNope();
+    toast(`Need $${FEED_COST} for grain!`);
+    return;
+  }
+  state.money -= FEED_COST;
+  const wasHungry = !isFed(c);
+  c.fedUntil = Math.max(Date.now(), c.fedUntil || 0) + FED_MS;
+  if (wasHungry) c.eggAt = Date.now() + EGG_MS[0] + Math.random() * (EGG_MS[1] - EGG_MS[0]);
+  blip(520, 0.06, "sine", 0.05);
+  sceneFloater("🌾", c.px, c.py, "#8d6e63");
+  save();
+  renderHeader();
+  updateCoopStatus();
+}
+
+function toggleChickenOut(id) {
+  const c = state.chickens.find(k => k.id === id);
+  if (!c) return;
+  c.out = !c.out;
+  if (c.out) delete c.tx;
+  blip(c.out ? 600 : 400, 0.07, "sine", 0.04);
+  save();
+  updateCoopStatus();
+}
+
+function buildChickEl(c) {
+  const el = document.createElement("div");
+  el.className = "chick";
+  el.innerHTML = `<div class="cshadow"></div><span class="ctag"></span><span class="cbody2">🐔</span>`;
+  $("scene").appendChild(el);
+  chickEls.set(c.id, el);
+  return el;
+}
+
+// slow tick: create/remove hen elements, lay eggs, refresh tags
+function renderChickens() {
+  const now = Date.now();
+  for (const [id, el] of chickEls) {
+    if (!state.chickens.some(c => c.id === id)) { el.remove(); chickEls.delete(id); }
+  }
+  let laid = false;
+  for (const c of state.chickens) {
+    if (!chickEls.has(c.id)) buildChickEl(c);
+    const el = chickEls.get(c.id);
+    el.querySelector(".ctag").textContent = isFed(c) ? "" : "🍽️";
+    // fed hens lay eggs wherever they happen to be
+    if (isFed(c) && now >= c.eggAt) {
+      c.eggAt = now + EGG_MS[0] + Math.random() * (EGG_MS[1] - EGG_MS[0]);
+      state.barn.egg = (state.barn.egg || 0) + 1;
+      sceneFloater("🥚 +1", c.px, c.py, "#8d6e63");
+      laid = true;
+    }
+  }
+  if (laid) { blip(700, 0.05, "sine", 0.04); save(); renderHeader(); renderCustomers(); }
+}
+
+// every frame: hens wander the field when out, head home when called back
+function moveChickens(dt) {
+  for (const c of state.chickens) {
+    const el = chickEls.get(c.id);
+    if (!el) continue;
+    let tx, ty;
+    if (c.out) {
+      if (c.tx === undefined || (Math.abs(c.px - c.tx) < 1.2 && Math.abs(c.py - c.ty) < 1.2)) {
+        c.tx = 16 + Math.random() * 62;    // wander the field and meadow
+        c.ty = 46 + Math.random() * 47;
+      }
+      tx = c.tx; ty = c.ty;
+    } else {
+      const idx = state.chickens.indexOf(c);
+      const home = chickHome(idx);
+      tx = home.x; ty = home.y;
+    }
+    const dx = tx - c.px, dy = ty - c.py;
+    const d = Math.hypot(dx, dy);
+    const moving = d > 1;
+    if (moving) {
+      const step = Math.min(d, 6.5 * dt);
+      c.px += dx / d * step;
+      c.py += dy / d * step;
+      if (dx > 0.05) c.face = 1;
+      else if (dx < -0.05) c.face = -1;
+    }
+    const s = farmerScale(Math.max(Y_MIN, Math.min(c.py, Y_MAX))) * 0.9;
+    el.style.left = c.px + "%";
+    el.style.top = c.py + "%";
+    el.style.zIndex = Math.round(c.py * 10);
+    el.style.transform = `translate(-50%, -92%) scale(${(s * (c.face || 1)).toFixed(3)}, ${s.toFixed(3)})`;
+    el.classList.toggle("moving", moving);
+  }
+}
+
+// the coop panel: look after the flock
+function renderCoop() {
+  const panel = $("coopPanel");
+  if (panel.hidden) return;
+  coopRows = new Map();
+  panel.innerHTML = "<h3>🐔 Chicken coop</h3>";
+  if (state.chickens.length === 0) {
+    panel.innerHTML += `<div class="mkt-note" style="margin-bottom:6px">No chickens yet! A fed hen roaming the farm<br>makes the soil richer (+20% growth)<br>and lays eggs you can sell.</div>`;
+  }
+  for (const c of state.chickens) {
+    const row = document.createElement("div");
+    row.className = "coop-row";
+    row.innerHTML = `
+      <span>🐔</span>
+      <span class="cn"><b>${c.name}</b><small class="cst"></small></span>
+      <button class="feedb">🌾 $${FEED_COST}</button>
+      <button class="outb"></button>`;
+    row.querySelector(".feedb").onclick = () => feedChicken(c.id);
+    row.querySelector(".outb").onclick = () => toggleChickenOut(c.id);
+    panel.appendChild(row);
+    coopRows.set(c.id, { status: row.querySelector(".cst"), outBtn: row.querySelector(".outb") });
+  }
+  if (state.chickens.length < CHICKEN_MAX) {
+    const buy = document.createElement("button");
+    buy.className = "coop-buy";
+    buy.textContent = `🐔 Buy chicken — $${chickenPrice()}`;
+    buy.onclick = () => buyChicken();
+    panel.appendChild(buy);
+  } else {
+    panel.innerHTML += `<div class="mkt-note">The coop is full (${CHICKEN_MAX} hens).</div>`;
+  }
+  const note = document.createElement("div");
+  note.className = "mkt-note";
+  note.innerHTML = `Fed hens out on the farm fertilize the soil:<br><b>all plants grow +20% faster</b> · they lay 🥚 to sell.<br>Hungry hens (🍽️) stop helping — keep them fed!`;
+  panel.appendChild(note);
+  updateCoopStatus();
+}
+
+// cheap per-tick refresh of timers and buttons (no rebuild, taps stay safe)
+function updateCoopStatus() {
+  const now = Date.now();
+  for (const c of state.chickens) {
+    const r = coopRows.get(c.id);
+    if (!r) continue;
+    if (isFed(c)) {
+      const s = Math.ceil((c.fedUntil - now) / 1000);
+      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · fed ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    } else {
+      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · 🍽️ HUNGRY`;
+    }
+    r.outBtn.textContent = c.out ? "🏠 Call back" : "🌱 Send out";
+  }
+}
+
+function setView(animals) {
+  $("plantsBtn").classList.toggle("active", !animals);
+  $("animalsBtn").classList.toggle("active", animals);
+  $("coopPanel").hidden = !animals;
+  if (animals) { $("mktPanel").hidden = true; $("mktBtn").classList.remove("open"); }
+  renderCoop();
+}
+
 // ---------------- Season engine ----------------
 function advanceSeason(now) {
   const name = state.season ? SEASONS[state.season.name].after : "spring";
@@ -2231,7 +2542,8 @@ function tick() {
     if (!p || p.dead || isReady(p)) continue;
     if (!inSeason(p.crop)) continue;   // out of season: dormant, and weather leaves it be
     if (!p.ail) {
-      p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1) * (p.tired ? 0.5 : 1);
+      p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1) * (p.tired ? 0.5 : 1)
+                    * (flockBoosting() ? CHICK_BOOST : 1);
       // weather can strike a healthy growing plant (not one just helped)
       if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
         p.ail = W.ail;
@@ -2287,6 +2599,8 @@ function tick() {
 
   updateField();
   renderCustomers();
+  renderChickens();
+  if (!$("coopPanel").hidden) updateCoopStatus();
 }
 
 // farmer + customers move at full frame rate
@@ -2296,6 +2610,7 @@ function frame(t) {
   lastFrame = t;
   updateFarmer(dt);
   moveCustomers(dt);
+  moveChickens(dt);
   requestAnimationFrame(frame);
 }
 
@@ -2327,7 +2642,7 @@ const stickEl = $("stick");
 const knobEl = $("knob");
 
 sceneEl.addEventListener("touchstart", (e) => {
-  if (e.target.closest(".action-btn, .cust, .mkt-btn, .mkt-panel")) return;
+  if (e.target.closest(".action-btn, .cust, .mkt-btn, .mkt-panel, .view-toggle, .coop-panel")) return;
   const r = sceneEl.getBoundingClientRect();
   for (const t of e.changedTouches) {
     if (farmer.joy === null) {
@@ -2389,7 +2704,7 @@ sceneEl.addEventListener("touchcancel", endJoy);
 
 // tap/click the grass to walk there
 sceneEl.addEventListener("click", (e) => {
-  if (e.target.closest(".action-btn, .spot, .cust, .mkt-btn, .mkt-panel")) return;
+  if (e.target.closest(".action-btn, .spot, .cust, .mkt-btn, .mkt-panel, .view-toggle, .coop-panel")) return;
   const r = sceneEl.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width * 100;
   const y = (e.clientY - r.top) / r.height * 100;
@@ -2398,7 +2713,9 @@ sceneEl.addEventListener("click", (e) => {
 });
 
 $("actionBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doAction(); });
-$("mktBtn").addEventListener("click", () => toggleMarket());
+$("mktBtn").addEventListener("click", () => { toggleMarket(); if (!$("mktPanel").hidden) setView(false); });
+$("plantsBtn").addEventListener("click", () => setView(false));
+$("animalsBtn").addEventListener("click", () => setView(true));
 
 // ---------------- Boot ----------------
 $("reset").onclick = () => {
@@ -2407,6 +2724,9 @@ $("reset").onclick = () => {
     state = freshState();
     for (const [, ce] of custEls) ce.el.remove();
     custEls.clear();
+    for (const [, el] of chickEls) el.remove();
+    chickEls.clear();
+    setView(false);
     customers = [];
     selectedSeed = "wheat";
     for (const s of spotEls) { s.sig = ""; s.plantbox.innerHTML = ""; s.plantEl = null; }
@@ -2420,6 +2740,7 @@ $("reset").onclick = () => {
 };
 
 state = load() || freshState();
+nextChickId = state.chickens.reduce((m, c) => Math.max(m, c.id + 1), 1);
 buildField();
 applyWeatherUI();
 applySeasonUI();
