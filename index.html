@@ -107,6 +107,60 @@
       radial-gradient(145% 125% at 50% 55%, transparent 62%, rgba(40,20,5,0.18) 100%);
   }
 
+  /* ------- weather overlays ------- */
+  .wx { position: absolute; inset: 0; z-index: 935; pointer-events: none; }
+  .wx.rain {
+    background-color: rgba(70,110,160,0.12);
+    background-image: repeating-linear-gradient(78deg,
+      rgba(200,230,255,0.4) 0 2px, transparent 2px 18px);
+    animation: rainfall 0.55s linear infinite;
+  }
+  .wx.storm {
+    background-color: rgba(30,45,80,0.3);
+    background-image: repeating-linear-gradient(75deg,
+      rgba(200,230,255,0.5) 0 2.5px, transparent 2.5px 12px);
+    animation: rainfall 0.32s linear infinite;
+  }
+  .wx.storm::after {
+    content: ""; position: absolute; inset: 0; background: #fff; opacity: 0;
+    animation: lightning 6.5s infinite;
+  }
+  @keyframes rainfall { from { background-position: 0 0; } to { background-position: -28px 130px; } }
+  @keyframes lightning {
+    0%, 93.9%, 96.4%, 100% { opacity: 0; }
+    94.3% { opacity: 0.55; }
+    94.9% { opacity: 0.05; }
+    95.4% { opacity: 0.4; }
+  }
+  .wx.drought {
+    background:
+      radial-gradient(120% 80% at 70% 10%, rgba(255,190,80,0.24), transparent 60%),
+      linear-gradient(180deg, rgba(255,170,60,0.16), rgba(255,120,20,0.1));
+  }
+  .wx.snow {
+    background-color: rgba(205,230,255,0.18);
+    background-image:
+      radial-gradient(3px 3px at 22px 28px, #fff 45%, transparent 60%),
+      radial-gradient(2px 2px at 75px 82px, #fff 45%, transparent 60%),
+      radial-gradient(2.5px 2.5px at 128px 45px, #fff 45%, transparent 60%),
+      radial-gradient(2px 2px at 50px 120px, #fff 45%, transparent 60%);
+    background-size: 160px 160px;
+    animation: snowfall 4s linear infinite;
+  }
+  @keyframes snowfall {
+    from { background-position: 0 -160px, 30px -160px, 60px -160px, 90px -160px; }
+    to   { background-position: 34px 160px, 10px 160px, 100px 160px, 70px 160px; }
+  }
+  .wxbadge {
+    position: absolute; top: 10px; left: 10px; z-index: 1002;
+    pointer-events: none;
+    background: linear-gradient(180deg, #b8834c, var(--plank-dark));
+    border: 3px solid var(--wood-dark); border-radius: 10px;
+    color: var(--cream); font-weight: bold; font-size: 0.85rem;
+    padding: 4px 10px;
+    box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
   /* sun with slowly turning rays */
   .sun {
     position: absolute; top: 4%; right: 6%;
@@ -295,6 +349,23 @@
     0% { opacity: 0; transform: translateY(-4px); }
     40% { opacity: 1; }
     100% { opacity: 0; transform: translateY(4px); }
+  }
+  /* plants in trouble: growth is paused until the farmer helps */
+  .ailtag {
+    position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    line-height: 1; z-index: 2;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+    animation: ailPulse 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes ailPulse { from { transform: translateX(-50%) scale(0.9); } to { transform: translateX(-50%) scale(1.15); } }
+  .spot.ail-soggy .mound {
+    background: radial-gradient(ellipse at 45% 35%,
+      rgba(90,150,225,0.8) 0%, rgba(65,115,195,0.55) 48%, rgba(74,47,24,0) 74%);
+  }
+  .spot.ail-wilt .plantbox { filter: saturate(0.3) sepia(0.45) brightness(0.95); }
+  .spot.ail-frozen .plantbox { filter: saturate(0.45) hue-rotate(150deg) brightness(1.15); }
+  .spot.ail-wilt .bar span, .spot.ail-soggy .bar span, .spot.ail-frozen .bar span {
+    background: linear-gradient(180deg, #ffab5e, #ef6c00);
   }
   .spot.locked.near .weed-glyph { text-shadow: 0 0 8px rgba(255,235,59,0.9); }
   .sprite {
@@ -744,8 +815,10 @@
       </svg>
     </div>
 
+    <div class="wx" id="wx"></div>
+    <div class="wxbadge" id="wxBadge">☀️ Sunny</div>
     <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
-    <button class="action-btn idle" id="actionBtn" title="Plant / chop / sell">🚶</button>
+    <button class="action-btn idle" id="actionBtn" title="Plant / water / chop / sell">🚶</button>
     <div class="light"></div>
   </div>
 
@@ -795,6 +868,28 @@ const CROPS = {
 const CAN_PRICE = 40;
 const CAN_USES = 3;
 const WATER_MS = 30000;      // one watering keeps a plant wet (2× growth) this long
+
+// ---------------- Weather ----------------
+// mult = how fast everything grows; ail = trouble this weather causes on random
+// plants (they stop growing until the farmer fixes them); rate = chance/sec/plant
+const WEATHERS = {
+  sunny:   { icon: "☀️", name: "Sunny",   mult: 1.0, ail: null,     rate: 0,      weight: 32,
+             msg: "☀️ Sunny skies — perfect farming weather!" },
+  rain:    { icon: "🌧️", name: "Rain",    mult: 1.5, ail: "soggy",  rate: 1 / 45, weight: 20,
+             msg: "🌧️ Rain! Crops grow faster — but drain any puddles before plants drown!" },
+  storm:   { icon: "⛈️", name: "Storm",   mult: 1.3, ail: "soggy",  rate: 1 / 18, weight: 12,
+             msg: "⛈️ Storm! Puddles everywhere — keep that field drained!" },
+  drought: { icon: "🥵", name: "Drought", mult: 0.5, ail: "wilt",   rate: 1 / 35, weight: 19,
+             msg: "🥵 Drought! Growth is slow and plants wilt — water them to revive them!" },
+  snow:    { icon: "❄️", name: "Snow",    mult: 0.7, ail: "frozen", rate: 1 / 35, weight: 17,
+             msg: "❄️ Snow! Plants are freezing over — break the ice to free them!" },
+};
+// what each ailment looks like and how the farmer fixes it
+const AILS = {
+  soggy:  { tag: "💦", fixIcon: "🪣", fixed: "puddle drained!" },
+  wilt:   { tag: "🥀", fixIcon: "💧", fixed: "revived!" },       // costs a watering
+  frozen: { tag: "🧊", fixIcon: "⛏️", fixed: "ice broken!" },
+};
 
 // how each crop LOOKS as a living plant: w/h = full-grown size (px, front row),
 // stems: [leftPx, widthPx, tiltDeg, heightFrac], balls: leafy clumps [xPct, bottomPct, sizePx],
@@ -912,23 +1007,22 @@ function freshState() {
   return {
     money: START_MONEY,
     plotsOwned: START_PLOTS,
-    // each plot: null (empty soil) or { crop, plantedAt, chopsLeft?, wateredAt?, boost? }
+    // each plot: null (empty soil) or
+    // { crop, grown (ms of growth banked), chopsLeft?, wetUntil?, ail? }
     plots: Array.from({ length: GRID }, () => null),
     barn: {},                // harvested crops: { wheat: 3, ... }
     water: 0,                // waterings left in the can
+    weather: null,           // { kind, until } — rolled on first tick
+    lastSeen: Date.now(),
   };
 }
 
-// effective growing time: real time plus bonus time earned while watered.
-// while a plant is wet it grows at double speed for WATER_MS after each watering.
-function growElapsed(p) {
-  let bonus = p.boost || 0;
-  if (p.wateredAt) bonus += Math.min(Date.now() - p.wateredAt, WATER_MS);
-  return Date.now() - p.plantedAt + bonus;
+function isWet(p) {
+  return Date.now() < (p.wetUntil || 0);
 }
 
-function isWet(p) {
-  return p.wateredAt && (Date.now() - p.wateredAt < WATER_MS);
+function isReady(p) {
+  return p.grown >= CROPS[p.crop].growMs;
 }
 
 function landPrice() {
@@ -937,15 +1031,39 @@ function landPrice() {
 
 // ---------------- Save / load ----------------
 const SAVE_KEY = "tiny-farm-save";
-function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+function save() {
+  state.lastSeen = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const s = JSON.parse(raw);
       if (s && typeof s.money === "number" && Array.isArray(s.plots)) {
+        const now = Date.now();
         // older saves had a one-time can purchase — convert it to charges
         if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
+        // older saves tracked plantedAt timestamps — convert to banked growth
+        for (const p of s.plots) {
+          if (!p) continue;
+          if (typeof p.grown !== "number") {
+            let bonus = p.boost || 0;
+            if (p.wateredAt) bonus += Math.min(now - p.wateredAt, WATER_MS);
+            p.grown = now - (p.plantedAt || now) + bonus;
+            delete p.plantedAt; delete p.boost; delete p.wateredAt;
+          }
+          p.ail = null;   // troubles don't persist across visits — be kind
+        }
+        // credit growth for time away (at calm sunny pace)
+        if (typeof s.lastSeen === "number") {
+          const away = Math.max(0, now - s.lastSeen);
+          for (const p of s.plots) {
+            if (p && p.grown < CROPS[p.crop].growMs) {
+              p.grown = Math.min(CROPS[p.crop].growMs, p.grown + away);
+            }
+          }
+        }
         return s;
       }
     }
@@ -1078,6 +1196,7 @@ function buildField() {
       <div class="mound" style="left:${-21 * s}px; top:${-12 * s}px; width:${42 * s}px; height:${24 * s}px;"></div>
       <div class="sprite">
         <span class="bar" style="width:${38 * s}px;"><span></span></span>
+        <span class="ailtag" style="font-size:${Math.round(16 * s)}px;"></span>
         <span class="plantbox"></span>
         <span class="weed-glyph"></span>
       </div>`;
@@ -1088,6 +1207,7 @@ function buildField() {
       scale: s,
       plantbox: el.querySelector(".plantbox"),
       weed: el.querySelector(".weed-glyph"),
+      ailtag: el.querySelector(".ailtag"),
       barFill: el.querySelector(".bar span"),
       sig: "",
       plantEl: null,
@@ -1119,12 +1239,13 @@ function updateField() {
       } else {
         crop = p.crop;
         const c = CROPS[crop];
-        prog = Math.min(1, growElapsed(p) / c.growMs);
+        prog = Math.min(1, p.grown / c.growMs);
         if (prog >= 1) { sig = "ready:" + crop; cls += " ready r-" + c.rarity; }
         else {
           const wet = isWet(p);
-          sig = "grow:" + crop + (wet ? ":w" : "");
-          cls += " growing" + (wet ? " wet" : "");
+          const ail = p.ail || "";
+          sig = "grow:" + crop + ":" + (wet ? "w" : "") + ail;
+          cls += " growing" + (wet ? " wet" : "") + (ail ? " ail-" + ail : "");
           barPct = Math.round(prog * 100);
         }
       }
@@ -1135,6 +1256,7 @@ function updateField() {
       const prevKind = s.sig.split(":")[0];
       s.sig = sig;
       s.el.className = cls + (s.el.classList.contains("near") ? " near" : "");
+      s.ailtag.textContent = (kind === "grow" && state.plots[i] && state.plots[i].ail) ? AILS[state.plots[i].ail].tag : "";
       s.weed.textContent = kind === "weed" ? (i % 2 ? "🌿" : "🪨") : "";
       if (kind === "weed") s.weed.style.fontSize = Math.round(20 * s.scale) + "px";
       if (kind === "grow" || kind === "ready") {
@@ -1201,8 +1323,13 @@ function nearestTarget() {
     }
     const p = state.plots[i];
     if (!p) consider(x, y, "plant", i);
-    else if (growElapsed(p) >= CROPS[p.crop].growMs) consider(x, y, "chop", i);
-    else if (state.water > 0 && !isWet(p)) consider(x, y, "water", i);
+    else if (isReady(p)) consider(x, y, "chop", i);
+    else if (p.ail === "soggy") consider(x, y, "drain", i);
+    else if (p.ail === "frozen") consider(x, y, "thaw", i);
+    else if (p.ail === "wilt") consider(x, y, "water", i);
+    else if (state.water > 0 && !isWet(p) && WEATHERS[(state.weather && state.weather.kind) || "sunny"].mult <= 1) {
+      consider(x, y, "water", i);   // no point watering in the rain
+    }
   }
   for (const c of customers) {
     consider(c.px, c.py, "sell", "c" + c.id);
@@ -1228,6 +1355,8 @@ function updateNearHighlight(t) {
     t.kind === "plant" ? CROPS[selectedSeed].emoji :
     t.kind === "chop"  ? "🪓" :
     t.kind === "water" ? "💧" :
+    t.kind === "drain" ? "🪣" :
+    t.kind === "thaw"  ? "⛏️" :
     t.kind === "sell"  ? "💰" : "🪧";
   if (t.kind === "sell") {
     const ce = custEls.get(Number(String(t.idx).slice(1)));
@@ -1244,6 +1373,7 @@ function doAction() {
   if (t.kind === "plant") plantAt(t.idx);
   else if (t.kind === "chop") chopAt(t.idx);
   else if (t.kind === "water") waterAt(t.idx);
+  else if (t.kind === "drain" || t.kind === "thaw") cureAt(t.idx);
   else if (t.kind === "sell") serve(Number(String(t.idx).slice(1)));
   else buyLand();
 }
@@ -1457,7 +1587,7 @@ function plantAt(i) {
     return;
   }
   state.money -= c.cost;
-  state.plots[i] = { crop: selectedSeed, plantedAt: Date.now() };
+  state.plots[i] = { crop: selectedSeed, grown: 0 };
   sndPlant();
   const { x, y } = spotScenePos(i);
   sceneFloater(`-$${c.cost}`, x, y, "#c62828");
@@ -1469,17 +1599,21 @@ function plantAt(i) {
 
 function waterAt(i) {
   const p = state.plots[i];
-  if (!p || state.water <= 0 || isWet(p)) return;
-  const now = Date.now();
-  // bank the bonus from any earlier watering, then start a fresh soak
-  if (p.wateredAt) p.boost = (p.boost || 0) + Math.min(now - p.wateredAt, WATER_MS);
-  p.wateredAt = now;
+  if (!p || isWet(p)) return;
+  if (state.water <= 0) {
+    sndNope();
+    toast("💧 The watering can is empty — grab a refill from the shelf!");
+    return;
+  }
+  const wasWilting = p.ail === "wilt";
+  p.wetUntil = Date.now() + WATER_MS;
+  if (wasWilting) { p.ail = null; p.safe = Date.now() + 12000; }
   state.water--;
   const { x, y } = spotScenePos(i);
   farmer.facing = x >= farmer.x ? 1 : -1;
   blip(880, 0.05, "sine", 0.05);
   setTimeout(() => blip(660, 0.07, "sine", 0.05), 60);
-  sceneFloater("💧", x, y, "#2196f3");
+  sceneFloater(wasWilting ? "💧 revived!" : "💧", x, y, "#2196f3");
   if (state.water === 0) toast("💧 The watering can is empty — grab a refill from the shelf!");
   lastNear = "?";
   save();
@@ -1487,11 +1621,30 @@ function waterAt(i) {
   updateField();
 }
 
+// free fixes: drain a puddle, break the ice
+function cureAt(i) {
+  const p = state.plots[i];
+  if (!p || !p.ail || p.ail === "wilt") return;
+  const a = AILS[p.ail];
+  p.ail = null;
+  p.safe = Date.now() + 12000;   // a freshly helped plant gets a breather
+  const { x, y } = spotScenePos(i);
+  farmer.facing = x >= farmer.x ? 1 : -1;
+  farmer.chopUntil = Date.now() + 300;   // little dig/whack animation
+  farmerEl.classList.remove("chopping");
+  void farmerEl.offsetWidth;
+  blip(300, 0.08, "triangle", 0.05);
+  sceneFloater(`${a.tag} ${a.fixed}`, x, y, "#1976d2");
+  lastNear = "?";
+  save();
+  updateField();
+}
+
 function chopAt(i) {
   const p = state.plots[i];
   if (!p) return;
   const c = CROPS[p.crop];
-  if (growElapsed(p) < c.growMs) return;
+  if (!isReady(p)) return;
 
   // face the crop and swing the axe
   const { x, y } = spotScenePos(i);
@@ -1624,9 +1777,63 @@ function spawnCustomer() {
   });
 }
 
+// ---------------- Weather engine ----------------
+function rollWeather(now) {
+  const total = Object.values(WEATHERS).reduce((a, w) => a + w.weight, 0);
+  let r = Math.random() * total, kind = "sunny";
+  for (const [k, w] of Object.entries(WEATHERS)) {
+    r -= w.weight;
+    if (r <= 0) { kind = k; break; }
+  }
+  const dur = (kind === "sunny" ? 50 : 40) * 1000 + Math.random() * 50000;
+  state.weather = { kind, until: now + dur };
+  // a change in the sky clears old troubles — puddles dry, ice melts
+  for (const p of state.plots) if (p) p.ail = null;
+  applyWeatherUI();
+  toast(WEATHERS[kind].msg);
+  save();
+}
+
+function applyWeatherUI() {
+  const kind = state.weather ? state.weather.kind : "sunny";
+  const w = WEATHERS[kind];
+  $("wx").className = "wx " + kind;
+  $("wxBadge").textContent = `${w.icon} ${w.name}`;
+}
+
 // ---------------- Game loop ----------------
+let lastGrow = Date.now();
+let tickCount = 0;
+
 function tick() {
   const now = Date.now();
+
+  // the sky changes on its own schedule
+  if (!state.weather || now >= state.weather.until) rollWeather(now);
+  const W = WEATHERS[state.weather.kind];
+
+  // grow every healthy plant at the weather's pace (wet soil doubles it);
+  // ailing plants are stuck until the farmer helps them
+  const dt = Math.min(now - lastGrow, 3600000);
+  lastGrow = now;
+  let troubled = null;
+  for (let i = 0; i < state.plotsOwned; i++) {
+    const p = state.plots[i];
+    if (!p || isReady(p)) continue;
+    if (!p.ail) {
+      p.grown += dt * W.mult * (isWet(p) ? 2 : 1);
+      // weather can strike a healthy growing plant (not one just helped)
+      if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
+        p.ail = W.ail;
+        troubled = i;
+      }
+    }
+  }
+  if (troubled !== null) {
+    const { x, y } = spotScenePos(troubled);
+    sceneFloater(AILS[state.plots[troubled].ail].tag, x, y, "#1976d2");
+    blip(180, 0.1, "sawtooth", 0.03);
+  }
 
   if (customers.length < MAX_QUEUE && now >= nextCustomerAt) {
     spawnCustomer();
@@ -1652,6 +1859,9 @@ function tick() {
     save();
     renderHeader();
   }
+
+  // autosave every ~5s so growth survives closing the page
+  if (++tickCount % 12 === 0) save();
 
   updateField();
   renderCustomers();
@@ -1778,6 +1988,7 @@ $("reset").onclick = () => {
     selectedSeed = "wheat";
     for (const s of spotEls) { s.sig = ""; s.plantbox.innerHTML = ""; s.plantEl = null; }
     lastNear = "?";
+    applyWeatherUI();
     scheduleNextCustomer();
     renderAll();
     toast("🌅 A fresh start on a tiny farm!");
@@ -1786,6 +1997,7 @@ $("reset").onclick = () => {
 
 state = load() || freshState();
 buildField();
+applyWeatherUI();
 scheduleNextCustomer();
 renderAll();
 toast("🌾 Welcome! Grow crops, chop them down, and sell to the folks at your stand.");
