@@ -954,10 +954,11 @@ const CROPS = {
   starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, unlockPlots: 23, chops: 3 },
 };
 
-// the watering can: $40 fills it with 3 waterings; each soak doubles growth speed
+// the watering can: $40 fills it with 3 waterings; a soaked plant grows MUCH faster
 const CAN_PRICE = 40;
 const CAN_USES = 3;
-const WATER_MS = 30000;      // one watering keeps a plant wet (2× growth) this long
+const WATER_MS = 30000;      // one watering keeps a plant wet this long
+const WATER_MULT = 4;        // wet soil grows this many times faster
 
 // ---------------- Weather ----------------
 // mult = how fast everything grows; ail = trouble this weather causes on random
@@ -1695,7 +1696,7 @@ function renderSeeds() {
   const canBtn = document.createElement("button");
   canBtn.className = "seed-btn";
   canBtn.style.borderColor = "#42a5f5";
-  canBtn.title = `Watering can — $${CAN_PRICE} for ${CAN_USES} waterings. Each soak makes a crop grow twice as fast for ${WATER_MS / 1000}s.`;
+  canBtn.title = `Watering can — $${CAN_PRICE} for ${CAN_USES} waterings. Each soak makes a crop grow ${WATER_MULT}× faster for ${WATER_MS / 1000}s.`;
   canBtn.innerHTML = `<span class="big">💧</span>$${CAN_PRICE}${state.water > 0 ? `<small>×${state.water} left</small>` : `<small>×${CAN_USES} uses</small>`}`;
   canBtn.onclick = () => buyWater();
   wrap.appendChild(canBtn);
@@ -1861,7 +1862,7 @@ function buyWater() {
   state.money -= CAN_PRICE;
   state.water += CAN_USES;
   sndBuy();
-  toast(`💧 Watering can filled — ${state.water} waterings! Walk to a growing crop and press the button.`);
+  toast(`💧 Watering can filled — ${state.water} waterings! A soaked crop grows ${WATER_MULT}× faster.`);
   lastNear = "?";
   save();
   renderHeader();
@@ -2060,7 +2061,7 @@ function tick() {
     const p = state.plots[i];
     if (!p || isReady(p)) continue;
     if (!p.ail) {
-      p.grown += dt * W.mult * (isWet(p) ? 2 : 1);
+      p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1);
       // weather can strike a healthy growing plant (not one just helped)
       if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
         p.ail = W.ail;
