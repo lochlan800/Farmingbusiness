@@ -298,6 +298,38 @@
     font-size: 12px; line-height: 1;
     animation: ailPulse 0.9s ease-in-out infinite alternate;
   }
+
+  /* the beehive and its bees */
+  .hive {
+    position: absolute; left: 12%; top: 52.5%; width: 38px; height: 44px; z-index: 3;
+    filter: drop-shadow(0 4px 3px rgba(20,40,10,0.25));
+  }
+  .hive .hroof {
+    position: absolute; top: 0; left: -4px; right: -4px; height: 9px;
+    background: linear-gradient(180deg, #8d5b33, #6d4322);
+    border-radius: 4px 4px 0 0;
+  }
+  .hive .hbox {
+    position: absolute; top: 8px; left: 0; right: 0; bottom: 0;
+    background:
+      repeating-linear-gradient(180deg, #f2c14e 0 8px, #d99e2b 8px 11px),
+      #f2c14e;
+    border: 2px solid #9c6a1f; border-radius: 4px 4px 6px 6px;
+  }
+  .hive .hhole {
+    position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    width: 9px; height: 9px; background: #4a2f10; border-radius: 50%;
+  }
+  .hive .htag {
+    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; line-height: 1;
+    animation: ailPulse 0.9s ease-in-out infinite alternate;
+  }
+  .bee {
+    position: absolute; pointer-events: none;
+    font-size: 13px; line-height: 1;
+    filter: drop-shadow(0 2px 1px rgba(0,0,0,0.25));
+  }
   .chick .cshadow {
     position: absolute; left: 50%; bottom: -2px;
     width: 22px; height: 7px; transform: translateX(-50%);
@@ -967,6 +999,12 @@
       <div class="chole"></div>
       <div class="croof"></div>
     </div>
+    <div class="hive" id="hive" hidden>
+      <div class="hbox"></div>
+      <div class="hhole"></div>
+      <div class="hroof"></div>
+      <span class="htag" id="hiveTag"></span>
+    </div>
     <div class="flower" style="left:8%;  top:70%; font-size:18px;">🌻</div>
     <div class="flower" style="left:4%;  top:88%; font-size:16px;">🌼</div>
     <div class="flower" style="left:82%; top:44%; font-size:14px;">🌷</div>
@@ -1133,9 +1171,20 @@ const EGG_MS = [60000, 100000]; // fed hens lay an egg every 60-100s
 const CHICK_NAMES = ["Henrietta", "Clucky", "Nugget", "Peep", "Omelette", "Doris"];
 function chickenPrice() { return Math.round(60 * Math.pow(1.6, state.chickens.length)); }
 
-// things that can be sold but aren't planted (eggs!)
+// ---------------- The beehive ----------------
+// tend the hive and the bees visit your plants: pollination speeds all
+// growth by 17%, and the hive fills jars of honey to sell
+const HIVE_PRICE = 120;
+const TEND_COST = 8;
+const TEND_MS = 240000;        // one tending keeps the bees buzzing 4 minutes
+const BEE_BOOST = 1.17;
+const HONEY_MS = [90000, 150000];
+function hiveActive() { return state.hive && Date.now() < state.hive.tendedUntil; }
+
+// things that can be sold but aren't planted (eggs! honey!)
 const EXTRAS = {
-  egg: { name: "Egg", emoji: "🥚", sell: 9, rarity: "common" },
+  egg:   { name: "Egg",   emoji: "🥚", sell: 9,  rarity: "common" },
+  honey: { name: "Honey", emoji: "🍯", sell: 14, rarity: "uncommon" },
 };
 function itemDef(k) { return CROPS[k] || EXTRAS[k]; }
 
@@ -1341,6 +1390,7 @@ function freshState() {
     lastCrop: Array.from({ length: GRID }, () => null),  // for crop rotation: what grew here last
     barn: {},                // harvested crops: { wheat: 3, ... }
     chickens: [],            // { id, name, fedUntil, out, eggAt, px, py }
+    hive: null,              // { tendedUntil, honeyAt } once you own the beehive
     water: 0,                // waterings left in the can
     era: 0,                  // index into ERAS — everyone starts in the Stone Age
     weather: null,           // { kind, until, next } — rolled on first tick
@@ -1380,8 +1430,9 @@ function load() {
         if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
         // older saves don't track crop rotation yet
         if (!Array.isArray(s.lastCrop)) s.lastCrop = Array.from({ length: GRID }, () => null);
-        // older saves have no chickens yet
+        // older saves have no chickens or beehive yet
         if (!Array.isArray(s.chickens)) s.chickens = [];
+        if (s.hive === undefined) s.hive = null;
         // older saves predate the ages — grant an era matching their old progress
         if (typeof s.era !== "number") {
           const p = s.plotsOwned || 4;
@@ -2204,9 +2255,12 @@ function spawnCustomer() {
     const w = Math.max(1, Math.round(base * DEMAND[demandOf(k)].freqMult * seasonal * 4));
     for (let j = 0; j < w; j++) weighted.push(k);
   });
-  // village folk love fresh eggs once you keep chickens
+  // village folk love fresh eggs and honey once you produce them
   if (state.chickens.length > 0) {
     for (let j = 0; j < options.length * 3; j++) weighted.push("egg");
+  }
+  if (state.hive) {
+    for (let j = 0; j < options.length * 2; j++) weighted.push("honey");
   }
   const crop = weighted[Math.floor(Math.random() * weighted.length)];
   const qty = 1 + Math.floor(Math.random() * 3);
@@ -2483,12 +2537,43 @@ function renderCoop() {
     buy.onclick = () => buyChicken();
     panel.appendChild(buy);
   } else {
-    panel.innerHTML += `<div class="mkt-note">The coop is full (${CHICKEN_MAX} hens).</div>`;
+    const full = document.createElement("div");
+    full.className = "mkt-note";
+    full.textContent = `The coop is full (${CHICKEN_MAX} hens).`;
+    panel.appendChild(full);
   }
   const note = document.createElement("div");
   note.className = "mkt-note";
   note.innerHTML = `Fed hens out on the farm fertilize the soil:<br><b>all plants grow +20% faster</b> · they lay 🥚 to sell.<br>Hungry hens (🍽️) stop helping — keep them fed!`;
   panel.appendChild(note);
+
+  // ---- the beehive section ----
+  const bh = document.createElement("h3");
+  bh.textContent = "🐝 Beehive";
+  bh.style.marginTop = "8px";
+  panel.appendChild(bh);
+  const beeNote = document.createElement("div");
+  beeNote.className = "mkt-note";
+  if (!state.hive) {
+    const buyH = document.createElement("button");
+    buyH.className = "coop-buy";
+    buyH.textContent = `🐝 Buy beehive — $${HIVE_PRICE}`;
+    buyH.onclick = () => buyHive();
+    panel.appendChild(buyH);
+    beeNote.innerHTML = `Tended bees pollinate the crops:<br><b>all plants grow +17% faster</b> · they make 🍯 to sell.`;
+  } else {
+    const row = document.createElement("div");
+    row.className = "coop-row";
+    row.innerHTML = `
+      <span>🐝</span>
+      <span class="cn"><b>The hive</b><small class="hst"></small></span>
+      <button class="tendb">🍯 Tend $${TEND_COST}</button>`;
+    row.querySelector(".tendb").onclick = () => tendHive();
+    panel.appendChild(row);
+    coopRows.set("hive", { status: row.querySelector(".hst") });
+    beeNote.innerHTML = `Busy bees pollinate the crops: <b>+17% growth</b><br>and fill 🍯 jars. An idle hive (😴) does nothing.`;
+  }
+  panel.appendChild(beeNote);
   updateCoopStatus();
 }
 
@@ -2505,6 +2590,121 @@ function updateCoopStatus() {
       r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · 🍽️ HUNGRY`;
     }
     r.outBtn.textContent = c.out ? "🏠 Call back" : "🌱 Send out";
+  }
+  const hr = coopRows.get("hive");
+  if (hr && state.hive) {
+    if (hiveActive()) {
+      const s = Math.ceil((state.hive.tendedUntil - now) / 1000);
+      hr.status.textContent = `🐝 buzzing · tended ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    } else {
+      hr.status.textContent = "😴 idle — tend the hive!";
+    }
+  }
+}
+
+// ---------------- The beehive ----------------
+let beeEls = [];
+
+function buyHive() {
+  if (state.hive) return;
+  if (state.money < HIVE_PRICE) {
+    sndNope();
+    toast(`Need $${HIVE_PRICE} for a beehive!`);
+    return;
+  }
+  state.money -= HIVE_PRICE;
+  const now = Date.now();
+  state.hive = {
+    tendedUntil: now + TEND_MS,
+    honeyAt: now + HONEY_MS[0] + Math.random() * (HONEY_MS[1] - HONEY_MS[0]),
+  };
+  sndBuy();
+  toast("🐝 A beehive! Keep it tended and the bees will pollinate your crops (+17% growth) and make honey.");
+  $("hive").hidden = false;
+  save();
+  renderHeader();
+  renderCoop();
+}
+
+function tendHive() {
+  if (!state.hive) return;
+  if (state.money < TEND_COST) {
+    sndNope();
+    toast(`Need $${TEND_COST} to tend the hive!`);
+    return;
+  }
+  state.money -= TEND_COST;
+  const wasIdle = !hiveActive();
+  state.hive.tendedUntil = Math.max(Date.now(), state.hive.tendedUntil) + TEND_MS;
+  if (wasIdle) state.hive.honeyAt = Date.now() + HONEY_MS[0] + Math.random() * (HONEY_MS[1] - HONEY_MS[0]);
+  blip(740, 0.05, "sine", 0.04);
+  setTimeout(() => blip(880, 0.06, "sine", 0.04), 70);
+  sceneFloater("🐝", 13.5, 53, "#b8860b");
+  save();
+  renderHeader();
+  updateCoopStatus();
+}
+
+// slow tick: honey drips in, bees come and go with the tending
+function updateHive() {
+  $("hive").hidden = !state.hive;
+  if (!state.hive) return;
+  const now = Date.now();
+  $("hiveTag").textContent = hiveActive() ? "" : "😴";
+  if (hiveActive() && now >= state.hive.honeyAt) {
+    state.hive.honeyAt = now + HONEY_MS[0] + Math.random() * (HONEY_MS[1] - HONEY_MS[0]);
+    state.barn.honey = (state.barn.honey || 0) + 1;
+    sceneFloater("🍯 +1", 13.5, 53, "#b8860b");
+    blip(660, 0.05, "sine", 0.04);
+    save();
+    renderHeader();
+    renderCustomers();
+  }
+  // bees exist only while the hive is looked after
+  if (hiveActive() && beeEls.length === 0) {
+    for (let i = 0; i < 3; i++) {
+      const el = document.createElement("div");
+      el.className = "bee";
+      el.textContent = "🐝";
+      $("scene").appendChild(el);
+      beeEls.push({ el, px: 13.5, py: 52, tx: 13.5, ty: 52, phase: i * 2.1 });
+    }
+  } else if (!hiveActive() && beeEls.length) {
+    for (const b of beeEls) b.el.remove();
+    beeEls = [];
+  }
+}
+
+// every frame: bees flit between the plants they're pollinating
+function moveBees(dt) {
+  if (!beeEls.length) return;
+  const t = performance.now() / 1000;
+  for (const b of beeEls) {
+    if (Math.hypot(b.tx - b.px, b.ty - b.py) < 1.5) {
+      // pick a plant to visit, or drift over the field
+      const planted = [];
+      for (let i = 0; i < state.plotsOwned; i++) {
+        if (state.plots[i] && !state.plots[i].dead) planted.push(i);
+      }
+      if (planted.length && Math.random() < 0.8) {
+        const { x, y } = spotScenePos(planted[Math.floor(Math.random() * planted.length)]);
+        b.tx = x + (Math.random() - 0.5) * 6;
+        b.ty = y - 3 - Math.random() * 4;
+      } else {
+        b.tx = 14 + Math.random() * 62;
+        b.ty = 46 + Math.random() * 42;
+      }
+    }
+    const dx = b.tx - b.px, dy = b.ty - b.py;
+    const d = Math.hypot(dx, dy) || 1;
+    const step = Math.min(d, 17 * dt);
+    b.px += dx / d * step;
+    b.py += dy / d * step;
+    const wob = Math.sin(t * 9 + b.phase) * 0.7;
+    b.el.style.left = b.px + "%";
+    b.el.style.top = (b.py + wob) + "%";
+    b.el.style.zIndex = Math.round(b.py * 10) + 3;
+    b.el.style.transform = `translate(-50%,-50%) scaleX(${dx < 0 ? -1 : 1})`;
   }
 }
 
@@ -2649,7 +2849,7 @@ function tick() {
     if (!inSeason(p.crop)) continue;   // out of season: dormant, and weather leaves it be
     if (!p.ail) {
       p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1) * (p.tired ? 0.5 : 1)
-                    * (flockBoosting() ? CHICK_BOOST : 1);
+                    * (flockBoosting() ? CHICK_BOOST : 1) * (hiveActive() ? BEE_BOOST : 1);
       // weather can strike a healthy growing plant (not one just helped)
       if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
         p.ail = W.ail;
@@ -2722,6 +2922,7 @@ function tick() {
   updateField();
   renderCustomers();
   renderChickens();
+  updateHive();
   if (!$("coopPanel").hidden) updateCoopStatus();
 }
 
@@ -2733,6 +2934,7 @@ function frame(t) {
   updateFarmer(dt);
   moveCustomers(dt);
   moveChickens(dt);
+  moveBees(dt);
   moveCrow(dt);
   requestAnimationFrame(frame);
 }
@@ -2849,6 +3051,9 @@ $("reset").onclick = () => {
     custEls.clear();
     for (const [, el] of chickEls) el.remove();
     chickEls.clear();
+    for (const b of beeEls) b.el.remove();
+    beeEls = [];
+    $("hive").hidden = true;
     if (crowEl) { crowEl.remove(); crow = null; crowEl = null; }
     setView(false);
     customers = [];
