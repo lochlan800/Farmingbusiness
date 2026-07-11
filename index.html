@@ -160,6 +160,9 @@
     padding: 4px 10px;
     box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
   }
+  .wxbadge .wxnext {
+    font-weight: normal; font-size: 0.72rem; opacity: 0.95; margin-left: 4px;
+  }
 
   /* sun with slowly turning rays */
   .sun {
@@ -1055,6 +1058,8 @@ function load() {
           }
           p.ail = null;   // troubles don't persist across visits — be kind
         }
+        // older saves have no forecast yet — give them one
+        if (s.weather && !s.weather.next) s.weather.next = pickWeatherKind();
         // credit growth for time away (at calm sunny pace)
         if (typeof s.lastSeen === "number") {
           const away = Math.max(0, now - s.lastSeen);
@@ -1778,15 +1783,21 @@ function spawnCustomer() {
 }
 
 // ---------------- Weather engine ----------------
-function rollWeather(now) {
+function pickWeatherKind() {
   const total = Object.values(WEATHERS).reduce((a, w) => a + w.weight, 0);
-  let r = Math.random() * total, kind = "sunny";
+  let r = Math.random() * total;
   for (const [k, w] of Object.entries(WEATHERS)) {
     r -= w.weight;
-    if (r <= 0) { kind = k; break; }
+    if (r <= 0) return k;
   }
+  return "sunny";
+}
+
+function rollWeather(now) {
+  // the forecast keeps its promise: what the badge predicted is what arrives
+  const kind = (state.weather && state.weather.next) || pickWeatherKind();
   const dur = (kind === "sunny" ? 50 : 40) * 1000 + Math.random() * 50000;
-  state.weather = { kind, until: now + dur };
+  state.weather = { kind, until: now + dur, next: pickWeatherKind() };
   // a change in the sky clears old troubles — puddles dry, ice melts
   for (const p of state.plots) if (p) p.ail = null;
   applyWeatherUI();
@@ -1798,7 +1809,17 @@ function applyWeatherUI() {
   const kind = state.weather ? state.weather.kind : "sunny";
   const w = WEATHERS[kind];
   $("wx").className = "wx " + kind;
-  $("wxBadge").textContent = `${w.icon} ${w.name}`;
+  const next = state.weather && state.weather.next ? WEATHERS[state.weather.next] : null;
+  $("wxBadge").innerHTML = `${w.icon} ${w.name}` + (next
+    ? ` <span class="wxnext">→ ${next.icon} in <span id="wxTime">?</span></span>`
+    : "");
+}
+
+function updateForecastClock(now) {
+  const t = $("wxTime");
+  if (!t || !state.weather) return;
+  const s = Math.max(0, Math.ceil((state.weather.until - now) / 1000));
+  t.textContent = s + "s";
 }
 
 // ---------------- Game loop ----------------
@@ -1810,6 +1831,7 @@ function tick() {
 
   // the sky changes on its own schedule
   if (!state.weather || now >= state.weather.until) rollWeather(now);
+  updateForecastClock(now);
   const W = WEATHERS[state.weather.kind];
 
   // grow every healthy plant at the weather's pace (wet soil doubles it);
