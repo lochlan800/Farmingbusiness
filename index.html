@@ -454,6 +454,9 @@
   .spot.ail-wilt .bar span, .spot.ail-soggy .bar span, .spot.ail-frozen .bar span {
     background: linear-gradient(180deg, #ffab5e, #ef6c00);
   }
+  /* out-of-season plants sleep until their season comes back around */
+  .spot.dormant .plantbox { filter: grayscale(0.65) brightness(0.92); }
+  .spot.dormant .bar span { background: linear-gradient(180deg, #b0bec5, #78909c); }
   .spot.locked.near .weed-glyph { text-shadow: 0 0 8px rgba(255,235,59,0.9); }
   .sprite {
     position: absolute; left: 0; bottom: -4px; width: 110px;
@@ -716,6 +719,7 @@
     box-shadow: 0 2px 0 #b8860b, 0 4px 6px rgba(60,35,10,0.25), 0 0 0 2px var(--gold), inset 0 1px 0 rgba(255,255,255,0.9);
   }
   .seed-btn.locked { filter: grayscale(1); opacity: 0.55; cursor: not-allowed; }
+  .seed-btn.off-season { filter: grayscale(0.75); opacity: 0.7; }
   .seed-btn .big, .land-btn .big { font-size: 1.25rem; display: block; }
   .seed-btn small { display: block; font-size: 0.6rem; color: #6d5b45; }
   .land-btn {
@@ -938,21 +942,34 @@ const RARITIES = {
 // ---------------- Crop definitions ----------------
 // unlockPlots: how many plots you must own before this seed appears in the shop
 // chops: how many axe swings to harvest — big crops take more
-// grow times scale with rarity: commons are quick, legendaries are a real wait
+// grow times scale with rarity: commons are quick, legendaries are a real wait.
+// seasons follow real life: tomatoes love spring/summer, pumpkins are an autumn
+// harvest, wheat grows year-round (winter wheat is real!), starfruit is magic.
 const CROPS = {
-  wheat:      { name: "Wheat",      emoji: "🌾", rarity: "common",    cost: 2,   growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1 },
-  carrot:     { name: "Carrot",     emoji: "🥕", rarity: "common",    cost: 5,   growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1 },
-  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 45000,  sell: 18,  unlockPlots: 5,  chops: 1 },
-  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 60000,  sell: 26,  unlockPlots: 7,  chops: 2 },
-  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 80000,  sell: 45,  unlockPlots: 9,  chops: 2 },
-  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 100000, sell: 56,  unlockPlots: 11, chops: 2 },
-  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 130000, sell: 80,  unlockPlots: 13, chops: 3 },
-  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 160000, sell: 140, unlockPlots: 15, chops: 2 },
-  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 190000, sell: 185, unlockPlots: 17, chops: 3 },
-  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 240000, sell: 260, unlockPlots: 19, chops: 2 },
-  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 280000, sell: 360, unlockPlots: 21, chops: 2 },
-  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, unlockPlots: 23, chops: 3 },
+  wheat:      { name: "Wheat",      emoji: "🌾", rarity: "common",    cost: 2,   growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1, seasons: ["spring","summer","autumn","winter"] },
+  carrot:     { name: "Carrot",     emoji: "🥕", rarity: "common",    cost: 5,   growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1, seasons: ["spring","summer","autumn"] },
+  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 45000,  sell: 18,  unlockPlots: 5,  chops: 1, seasons: ["spring","summer","autumn"] },
+  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 60000,  sell: 26,  unlockPlots: 7,  chops: 2, seasons: ["spring","summer"] },
+  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 80000,  sell: 45,  unlockPlots: 9,  chops: 2, seasons: ["summer","autumn"] },
+  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 100000, sell: 56,  unlockPlots: 11, chops: 2, seasons: ["summer"] },
+  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 130000, sell: 80,  unlockPlots: 13, chops: 3, seasons: ["summer","autumn"] },
+  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 160000, sell: 140, unlockPlots: 15, chops: 2, seasons: ["spring","summer"] },
+  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 190000, sell: 185, unlockPlots: 17, chops: 3, seasons: ["summer"] },
+  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 240000, sell: 260, unlockPlots: 19, chops: 2, seasons: ["summer","autumn"] },
+  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 280000, sell: 360, unlockPlots: 21, chops: 2, seasons: ["summer","autumn"] },
+  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, unlockPlots: 23, chops: 3, seasons: ["spring","summer","autumn","winter"] },
 };
+const SEASON_ICON = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
+
+function currentSeason() {
+  return state && state.season ? state.season.name : "spring";
+}
+function inSeason(crop) {
+  return CROPS[crop].seasons.includes(currentSeason());
+}
+function seasonIcons(crop) {
+  return CROPS[crop].seasons.map(s => SEASON_ICON[s]).join("");
+}
 
 // the watering can: $40 fills it with 3 waterings; a soaked plant grows MUCH faster
 const CAN_PRICE = 40;
@@ -1383,8 +1400,9 @@ function updateField() {
         else {
           const wet = isWet(p);
           const ail = p.ail || "";
-          sig = "grow:" + crop + ":" + (wet ? "w" : "") + ail;
-          cls += " growing" + (wet ? " wet" : "") + (ail ? " ail-" + ail : "");
+          const dormant = !inSeason(crop);
+          sig = "grow:" + crop + ":" + (wet ? "w" : "") + ail + (dormant ? "z" : "");
+          cls += " growing" + (wet ? " wet" : "") + (ail ? " ail-" + ail : "") + (dormant ? " dormant" : "");
           barPct = Math.round(prog * 100);
         }
       }
@@ -1395,7 +1413,8 @@ function updateField() {
       const prevKind = s.sig.split(":")[0];
       s.sig = sig;
       s.el.className = cls + (s.el.classList.contains("near") ? " near" : "");
-      s.ailtag.textContent = (kind === "grow" && state.plots[i] && state.plots[i].ail) ? AILS[state.plots[i].ail].tag : "";
+      const gp = kind === "grow" ? state.plots[i] : null;
+      s.ailtag.textContent = gp ? (gp.ail ? AILS[gp.ail].tag : (!inSeason(gp.crop) ? "💤" : "")) : "";
       s.weed.textContent = kind === "weed" ? (i % 2 ? "🌿" : "🪨") : "";
       if (kind === "weed") s.weed.style.fontSize = Math.round(20 * s.scale) + "px";
       if (kind === "grow" || kind === "ready") {
@@ -1466,8 +1485,9 @@ function nearestTarget() {
     else if (p.ail === "soggy") consider(x, y, "drain", i);
     else if (p.ail === "frozen") consider(x, y, "thaw", i);
     else if (p.ail === "wilt") consider(x, y, "water", i);
-    else if (state.water > 0 && !isWet(p) && WEATHERS[(state.weather && state.weather.kind) || "sunny"].mult <= 1) {
-      consider(x, y, "water", i);   // no point watering in the rain
+    else if (state.water > 0 && !isWet(p) && inSeason(p.crop) &&
+             WEATHERS[(state.weather && state.weather.kind) || "sunny"].mult <= 1) {
+      consider(x, y, "water", i);   // no point watering in the rain or a sleeping plant
     }
   }
   for (const c of customers) {
@@ -1675,12 +1695,16 @@ function renderSeeds() {
     const btn = document.createElement("button");
     btn.className = "seed-btn" + (key === selectedSeed ? " selected" : "") + (locked ? " locked" : "");
     const dm = DEMAND[demandOf(key)];
+    const off = !locked && !inSeason(key);
     btn.title = locked
-      ? `${c.name} (${rar.label}) — own ${c.unlockPlots} plots to unlock`
-      : `${c.name} (${rar.label}) — plant $${c.cost}, sells $${c.sell}. Demand: ${dm.label.replace(/^\S+ /, "")}`;
+      ? `${c.name} (${rar.label}) — own ${c.unlockPlots} plots to unlock. Grows in ${seasonIcons(key)}`
+      : `${c.name} (${rar.label}) — plant $${c.cost}, sells $${c.sell}. Grows in ${seasonIcons(key)}`;
+    if (off) btn.classList.add("off-season");
     btn.innerHTML = locked
       ? `<span class="big">🔒</span>${c.unlockPlots} plots`
-      : `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:${dm.color}">${dm.label}</small>`;
+      : off
+        ? `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:#1565c0">💤 ${seasonIcons(key)}</small>`
+        : `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:${dm.color}">${dm.label}</small>`;
     // rarity shows as the chip's border and a stripe under the price
     btn.style.borderColor = rar.color;
     if (!locked) btn.style.boxShadow = `0 2px 0 rgba(90,60,25,0.5), 0 4px 6px rgba(60,35,10,0.2), inset 0 -3px 0 ${rar.color}`;
@@ -1721,6 +1745,11 @@ function renderAll() {
 function plantAt(i) {
   const c = CROPS[selectedSeed];
   if (state.plotsOwned < c.unlockPlots) return;
+  if (!inSeason(selectedSeed)) {
+    sndNope();
+    toast(`${c.emoji} ${c.name} won't grow in ${SEASON_ICON[currentSeason()]} ${SEASONS[currentSeason()].name} — it grows in ${seasonIcons(selectedSeed)}`);
+    return;
+  }
   if (state.money < c.cost) {
     sndNope();
     toast(`Need $${c.cost} to plant ${c.name}!`);
@@ -1905,7 +1934,8 @@ function spawnCustomer() {
   const weighted = [];
   options.forEach((k, idx) => {
     const base = Math.max(1, options.length - idx);
-    const w = Math.max(1, Math.round(base * DEMAND[demandOf(k)].freqMult * 4));
+    const seasonal = inSeason(k) ? 1 : 0.25;   // folk rarely ask for out-of-season produce
+    const w = Math.max(1, Math.round(base * DEMAND[demandOf(k)].freqMult * seasonal * 4));
     for (let j = 0; j < w; j++) weighted.push(k);
   });
   const crop = weighted[Math.floor(Math.random() * weighted.length)];
@@ -2004,13 +2034,14 @@ function renderMarket() {
   panel.innerHTML = "<h3>📊 Market demand</h3>" + rows.map(({ key, c, dm }) => {
     const d = DEMAND[dm];
     const locked = state.plotsOwned < c.unlockPlots;
+    const off = !inSeason(key);
     const price = Math.round(c.sell * d.priceMult);
-    return `<div class="mkt-row${locked ? " locked" : ""}">
-      <span class="nm">${locked ? "🔒" : ""}${c.emoji} ${c.name}</span>
+    return `<div class="mkt-row${locked ? " locked" : ""}${off ? " locked" : ""}" title="Grows in ${seasonIcons(key)}">
+      <span class="nm">${locked ? "🔒" : ""}${off ? "💤" : ""}${c.emoji} ${c.name}</span>
       <b style="color:${d.color}">${d.label}</b>
       <span class="pr">$${price}</span>
     </div>`;
-  }).join("") + `<div class="mkt-note">🔥 more buyers &amp; better prices · ▼ few buyers, low prices<br>Prices shown are per item at today's demand.</div>`;
+  }).join("") + `<div class="mkt-note">🔥 more buyers &amp; better prices · ▼ few buyers, low prices<br>💤 = out of season right now · Prices are per item at today's demand.</div>`;
 }
 
 function toggleMarket(open) {
@@ -2025,7 +2056,11 @@ function advanceSeason(now) {
   const name = state.season ? SEASONS[state.season.name].after : "spring";
   state.season = { name, until: now + SEASON_MS };
   applySeasonUI();
+  const growing = Object.keys(CROPS).filter(k => CROPS[k].seasons.includes(name)).map(k => CROPS[k].emoji).join("");
   toast(SEASONS[name].msg);
+  toast(`🌱 In season now: ${growing}`);
+  renderSeeds();
+  renderMarket();
   save();
 }
 
@@ -2060,6 +2095,7 @@ function tick() {
   for (let i = 0; i < state.plotsOwned; i++) {
     const p = state.plots[i];
     if (!p || isReady(p)) continue;
+    if (!inSeason(p.crop)) continue;   // out of season: dormant, and weather leaves it be
     if (!p.ail) {
       p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1);
       // weather can strike a healthy growing plant (not one just helped)
