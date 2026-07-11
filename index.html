@@ -465,6 +465,22 @@
   /* out-of-season plants sleep until their season comes back around */
   .spot.dormant .plantbox { filter: grayscale(0.65) brightness(0.92); }
   .spot.dormant .bar span { background: linear-gradient(180deg, #b0bec5, #78909c); }
+  /* a plant on the brink of death flashes its warning urgently */
+  .spot.dying .ailtag {
+    animation: ailPanic 0.3s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 5px rgba(244,67,54,0.95));
+  }
+  @keyframes ailPanic {
+    from { transform: translateX(-50%) scale(0.95); }
+    to { transform: translateX(-50%) scale(1.35); }
+  }
+  /* dead plants: a withered husk to sweep away */
+  .spot.dead .weed-glyph { filter: saturate(0.25) brightness(0.8); }
+  .spot.dead .mound {
+    background: radial-gradient(ellipse at 42% 28%,
+      #4a3520 0%, #382818 45%, rgba(40,28,15,0) 74%);
+  }
+  .spot.dead.near .weed-glyph { text-shadow: 0 0 8px rgba(255,235,59,0.9); }
   .spot.locked.near .weed-glyph { text-shadow: 0 0 8px rgba(255,235,59,0.9); }
   .sprite {
     position: absolute; left: 0; bottom: -4px; width: 110px;
@@ -1062,12 +1078,14 @@ const SEASONS = {
             msg: "❄️ Winter has arrived — bundle up, the snow is coming!",
             weights: { sunny: 22, rain: 6, storm: 5, drought: 0, snow: 40 } },
 };
-// what each ailment looks like and how the farmer fixes it
+// what each ailment looks like, how the farmer fixes it, and how it kills
 const AILS = {
-  soggy:  { tag: "💦", fixIcon: "🪣", fixed: "puddle drained!" },
-  wilt:   { tag: "🥀", fixIcon: "💧", fixed: "revived!" },       // costs a watering
-  frozen: { tag: "🧊", fixIcon: "⛏️", fixed: "ice broken!" },
+  soggy:  { tag: "💦", fixIcon: "🪣", fixed: "puddle drained!", died: "drowned" },
+  wilt:   { tag: "🥀", fixIcon: "💧", fixed: "revived!", died: "withered away" },  // costs a watering
+  frozen: { tag: "🧊", fixIcon: "⛏️", fixed: "ice broken!", died: "froze solid" },
 };
+// ignore a struggling plant this long and it dies
+const AIL_DEATH_MS = 40000;
 
 // how each crop LOOKS as a living plant: w/h = full-grown size (px, front row),
 // stems: [leftPx, widthPx, tiltDeg, heightFrac], balls: leafy clumps [xPct, bottomPct, sizePx],
@@ -1428,6 +1446,9 @@ function updateField() {
       if (!p) {
         sig = "empty";
         cls += " stage-empty";
+      } else if (p.dead) {
+        sig = "dead:" + p.crop;
+        cls += " dead";
       } else {
         crop = p.crop;
         const c = CROPS[crop];
@@ -1450,9 +1471,10 @@ function updateField() {
       s.sig = sig;
       s.el.className = cls + (s.el.classList.contains("near") ? " near" : "");
       const gp = kind === "grow" ? state.plots[i] : null;
-      s.ailtag.textContent = gp ? (gp.ail ? AILS[gp.ail].tag : (!inSeason(gp.crop) ? "💤" : "")) : "";
-      s.weed.textContent = kind === "weed" ? (i % 2 ? "🌿" : "🪨") : "";
+      s.ailtag.textContent = gp ? (gp.ail ? AILS[gp.ail].tag : (!inSeason(gp.crop) ? "💤" : "")) : (kind === "dead" ? "💀" : "");
+      s.weed.textContent = kind === "weed" ? (i % 2 ? "🌿" : "🪨") : (kind === "dead" ? "🥀" : "");
       if (kind === "weed") s.weed.style.fontSize = Math.round(20 * s.scale) + "px";
+      if (kind === "dead") s.weed.style.fontSize = Math.round(26 * s.scale) + "px";
       if (kind === "grow" || kind === "ready") {
         if (!(prevKind === "grow" || prevKind === "ready") || !s.plantEl || !s.plantEl.classList.contains("plant-" + crop)) {
           s.plantbox.innerHTML = buildPlantHTML(crop, s.scale);
@@ -1472,6 +1494,11 @@ function updateField() {
       if (PLANTS[crop].goldWhenRipe) s.plantEl.classList.toggle("ripe-gold", prog >= 0.95);
     }
     if (barPct >= 0) s.barFill.style.width = barPct + "%";
+
+    // a struggling plant flashes its warning harder as death approaches
+    const pp = state.plots[i];
+    s.el.classList.toggle("dying",
+      !!(i < state.plotsOwned && pp && !pp.dead && pp.ail && now - (pp.ailAt || now) > AIL_DEATH_MS * 0.5));
   }
 
   const landBtn = $("landBtn");
@@ -1517,6 +1544,7 @@ function nearestTarget() {
     }
     const p = state.plots[i];
     if (!p) consider(x, y, "plant", i);
+    else if (p.dead) consider(x, y, "clear", i);
     else if (isReady(p)) consider(x, y, "chop", i);
     else if (p.ail === "soggy") consider(x, y, "drain", i);
     else if (p.ail === "frozen") consider(x, y, "thaw", i);
@@ -1552,6 +1580,7 @@ function updateNearHighlight(t) {
     t.kind === "water" ? "💧" :
     t.kind === "drain" ? "🪣" :
     t.kind === "thaw"  ? "⛏️" :
+    t.kind === "clear" ? "🧹" :
     t.kind === "sell"  ? "💰" : "🪧";
   if (t.kind === "sell") {
     const ce = custEls.get(Number(String(t.idx).slice(1)));
@@ -1569,6 +1598,7 @@ function doAction() {
   else if (t.kind === "chop") chopAt(t.idx);
   else if (t.kind === "water") waterAt(t.idx);
   else if (t.kind === "drain" || t.kind === "thaw") cureAt(t.idx);
+  else if (t.kind === "clear") clearAt(t.idx);
   else if (t.kind === "sell") serve(Number(String(t.idx).slice(1)));
   else buyLand();
 }
@@ -1821,7 +1851,7 @@ function plantAt(i) {
 
 function waterAt(i) {
   const p = state.plots[i];
-  if (!p || isWet(p)) return;
+  if (!p || p.dead || isWet(p)) return;
   if (state.water <= 0) {
     sndNope();
     toast("💧 The watering can is empty — grab a refill from the shelf!");
@@ -1840,6 +1870,23 @@ function waterAt(i) {
   lastNear = "?";
   save();
   renderSeeds();
+  updateField();
+}
+
+// sweep away a dead plant so the plot can be replanted
+function clearAt(i) {
+  const p = state.plots[i];
+  if (!p || !p.dead) return;
+  state.plots[i] = null;
+  const { x, y } = spotScenePos(i);
+  farmer.facing = x >= farmer.x ? 1 : -1;
+  farmer.chopUntil = Date.now() + 300;
+  farmerEl.classList.remove("chopping");
+  void farmerEl.offsetWidth;
+  blip(240, 0.1, "triangle", 0.04);
+  sceneFloater("🧹 cleared", x, y, "#8d6e63");
+  lastNear = "?";
+  save();
   updateField();
 }
 
@@ -2049,7 +2096,7 @@ function rollWeather(now) {
     : (kind === "sunny" ? 50 : 40) * 1000 + Math.random() * 50000;
   state.weather = { kind, until: now + dur, next: pickWeatherKind() };
   // a change in the sky clears old troubles — puddles dry, ice melts
-  for (const p of state.plots) if (p) p.ail = null;
+  for (const p of state.plots) if (p && !p.dead) { p.ail = null; p.ailAt = 0; }
   applyWeatherUI();
   toast(WEATHERS[kind].msg);
   save();
@@ -2164,23 +2211,36 @@ function tick() {
   const dt = Math.min(now - lastGrow, 3600000);
   lastGrow = now;
   let troubled = null;
+  const died = [];
   for (let i = 0; i < state.plotsOwned; i++) {
     const p = state.plots[i];
-    if (!p || isReady(p)) continue;
+    if (!p || p.dead || isReady(p)) continue;
     if (!inSeason(p.crop)) continue;   // out of season: dormant, and weather leaves it be
     if (!p.ail) {
       p.grown += dt * W.mult * (isWet(p) ? WATER_MULT : 1);
       // weather can strike a healthy growing plant (not one just helped)
       if (W.ail && !isReady(p) && now > (p.safe || 0) && Math.random() < W.rate * dt / 1000) {
         p.ail = W.ail;
+        p.ailAt = now;
         troubled = i;
       }
+    } else if (now - (p.ailAt || now) >= AIL_DEATH_MS) {
+      // ignored too long — the plant is lost
+      died.push({ crop: p.crop, via: p.ail });
+      state.plots[i] = { crop: p.crop, dead: true };
     }
   }
   if (troubled !== null) {
     const { x, y } = spotScenePos(troubled);
     sceneFloater(AILS[state.plots[troubled].ail].tag, x, y, "#1976d2");
     blip(180, 0.1, "sawtooth", 0.03);
+  }
+  if (died.length) {
+    blip(110, 0.3, "sawtooth", 0.05);
+    toast(died.length === 1
+      ? `💀 Your ${CROPS[died[0].crop].emoji} ${CROPS[died[0].crop].name} ${AILS[died[0].via].died}! Sweep it away to replant.`
+      : `💀 ${died.length} plants died in the weather! Sweep them away to replant.`);
+    save();
   }
 
   if (customers.length < MAX_QUEUE && now >= nextCustomerAt) {
@@ -2199,7 +2259,7 @@ function tick() {
   // rescue: if totally broke with nothing growing and nothing in the barn,
   // grandma slips you a few dollars so the game can't get stuck
   const cheapest = Math.min(...Object.values(CROPS).map(c => c.cost));
-  const growing = state.plots.some(p => p);
+  const growing = state.plots.some(p => p && !p.dead);
   const stored = Object.values(state.barn).some(n => n > 0);
   if (state.money < cheapest && !growing && !stored) {
     state.money += 5;
