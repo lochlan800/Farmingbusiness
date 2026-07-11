@@ -298,6 +298,10 @@
     font-size: 12px; line-height: 1;
     animation: ailPulse 0.9s ease-in-out infinite alternate;
   }
+  .chick.starving .ctag {
+    animation: ailPanic 0.3s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 5px rgba(244,67,54,0.95));
+  }
 
   /* the beehive and its bees */
   .hive {
@@ -1164,12 +1168,15 @@ const SEASON_ICON = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: 
 // buy hens, keep them fed, and send them out to roam: a fed roaming flock
 // fertilizes the soil (+20% growth for every plant) and lays eggs to sell
 const CHICKEN_MAX = 4;
-const FEED_COST = 5;
 const FED_MS = 180000;         // one feed keeps a hen happy for 3 minutes
+const STARVE_MS = 180000;      // hungry this long after that and the hen starves
 const CHICK_BOOST = 1.2;       // soil boost while any fed hen roams the farm
 const EGG_MS = [60000, 100000]; // fed hens lay an egg every 60-100s
+const EGG_DOZEN = 12;          // eggs only sell by the dozen
 const CHICK_NAMES = ["Henrietta", "Clucky", "Nugget", "Peep", "Omelette", "Doris"];
 function chickenPrice() { return Math.round(60 * Math.pow(1.6, state.chickens.length)); }
+// hens eat the corn YOU grow; when corn can't grow, emergency corn costs a fortune
+function cornPrice() { return inSeason("corn") ? 30 : 95; }
 
 // ---------------- The beehive ----------------
 // tend the hive and the bees visit your plants: pollination speeds all
@@ -1433,6 +1440,11 @@ function load() {
         // older saves have no chickens or beehive yet
         if (!Array.isArray(s.chickens)) s.chickens = [];
         if (s.hive === undefined) s.hive = null;
+        // a neighbor watched the hens while you were away — they come back
+        // hungry (never starved), so returning players get time to feed them
+        for (const c of s.chickens) {
+          c.fedUntil = Math.max(c.fedUntil || 0, now - STARVE_MS * 0.4);
+        }
         // older saves predate the ages — grant an era matching their old progress
         if (typeof s.era !== "number") {
           const p = s.plotsOwned || 4;
@@ -2263,7 +2275,8 @@ function spawnCustomer() {
     for (let j = 0; j < options.length * 2; j++) weighted.push("honey");
   }
   const crop = weighted[Math.floor(Math.random() * weighted.length)];
-  const qty = 1 + Math.floor(Math.random() * 3);
+  // eggs are only worth selling by the dozen
+  const qty = crop === "egg" ? EGG_DOZEN : 1 + Math.floor(Math.random() * 3);
   customers.push({
     id: ++customerId,
     face: FACES[Math.floor(Math.random() * FACES.length)],
@@ -2415,17 +2428,36 @@ function buyChicken() {
 function feedChicken(id) {
   const c = state.chickens.find(k => k.id === id);
   if (!c) return;
-  if (state.money < FEED_COST) {
+  if ((state.barn.corn || 0) < 1) {
     sndNope();
-    toast(`Need $${FEED_COST} for grain!`);
+    toast(`🌽 No corn in the barn! Grow some${inSeason("corn") ? "" : " (out of season!)"} or buy emergency corn in the coop.`);
     return;
   }
-  state.money -= FEED_COST;
+  state.barn.corn--;
   const wasHungry = !isFed(c);
   c.fedUntil = Math.max(Date.now(), c.fedUntil || 0) + FED_MS;
   if (wasHungry) c.eggAt = Date.now() + EGG_MS[0] + Math.random() * (EGG_MS[1] - EGG_MS[0]);
+  // a well-fed hen thanks you with an egg on the spot
+  state.barn.egg = (state.barn.egg || 0) + 1;
   blip(520, 0.06, "sine", 0.05);
-  sceneFloater("🌾", c.px, c.py, "#8d6e63");
+  sceneFloater("🌽→🥚", c.px, c.py, "#8d6e63");
+  save();
+  renderHeader();
+  renderCustomers();
+  updateCoopStatus();
+}
+
+function buyCorn() {
+  const price = cornPrice();
+  if (state.money < price) {
+    sndNope();
+    toast(`Need $${price} for corn!`);
+    return;
+  }
+  state.money -= price;
+  state.barn.corn = (state.barn.corn || 0) + 1;
+  sndBuy();
+  if (!inSeason("corn")) toast(`🌽 Out-of-season corn costs a fortune ($${price})... but the hens must eat!`);
   save();
   renderHeader();
   updateCoopStatus();
@@ -2450,9 +2482,22 @@ function buildChickEl(c) {
   return el;
 }
 
-// slow tick: create/remove hen elements, lay eggs, refresh tags
+// slow tick: create/remove hen elements, lay eggs, starve the forgotten
 function renderChickens() {
   const now = Date.now();
+
+  // a hen left hungry too long starves
+  const starved = state.chickens.filter(c => now - (c.fedUntil || 0) > STARVE_MS);
+  if (starved.length) {
+    state.chickens = state.chickens.filter(c => !starved.includes(c));
+    for (const c of starved) {
+      toast(`💀 ${c.name} starved! Keep corn in the barn to feed your hens.`);
+    }
+    blip(110, 0.3, "sawtooth", 0.05);
+    save();
+    renderCoop();
+  }
+
   for (const [id, el] of chickEls) {
     if (!state.chickens.some(c => c.id === id)) { el.remove(); chickEls.delete(id); }
   }
@@ -2460,9 +2505,11 @@ function renderChickens() {
   for (const c of state.chickens) {
     if (!chickEls.has(c.id)) buildChickEl(c);
     const el = chickEls.get(c.id);
-    el.querySelector(".ctag").textContent = isFed(c) ? "" : "🍽️";
+    const hungry = !isFed(c);
+    el.querySelector(".ctag").textContent = hungry ? "🍽️" : "";
+    el.classList.toggle("starving", hungry && now - c.fedUntil > STARVE_MS * 0.5);
     // fed hens lay eggs wherever they happen to be
-    if (isFed(c) && now >= c.eggAt) {
+    if (!hungry && now >= c.eggAt) {
       c.eggAt = now + EGG_MS[0] + Math.random() * (EGG_MS[1] - EGG_MS[0]);
       state.barn.egg = (state.barn.egg || 0) + 1;
       sceneFloater("🥚 +1", c.px, c.py, "#8d6e63");
@@ -2516,6 +2563,13 @@ function renderCoop() {
   panel.innerHTML = "<h3>🐔 Chicken coop</h3>";
   if (state.chickens.length === 0) {
     panel.innerHTML += `<div class="mkt-note" style="margin-bottom:6px">No chickens yet! A fed hen roaming the farm<br>makes the soil richer (+20% growth)<br>and lays eggs you can sell.</div>`;
+  } else {
+    const cornLine = document.createElement("div");
+    cornLine.className = "mkt-note";
+    cornLine.style.marginBottom = "5px";
+    cornLine.innerHTML = `🌽 corn in barn: <b class="cornCount">?</b> — hens eat YOUR corn!`;
+    panel.appendChild(cornLine);
+    coopRows.set("corn", { status: cornLine.querySelector(".cornCount") });
   }
   for (const c of state.chickens) {
     const row = document.createElement("div");
@@ -2523,12 +2577,19 @@ function renderCoop() {
     row.innerHTML = `
       <span>🐔</span>
       <span class="cn"><b>${c.name}</b><small class="cst"></small></span>
-      <button class="feedb">🌾 $${FEED_COST}</button>
+      <button class="feedb" title="Feed one corn from your barn">🌽×1</button>
       <button class="outb"></button>`;
     row.querySelector(".feedb").onclick = () => feedChicken(c.id);
     row.querySelector(".outb").onclick = () => toggleChickenOut(c.id);
     panel.appendChild(row);
     coopRows.set(c.id, { status: row.querySelector(".cst"), outBtn: row.querySelector(".outb") });
+  }
+  if (state.chickens.length > 0) {
+    const cornBuy = document.createElement("button");
+    cornBuy.className = "coop-buy corn-buy";
+    cornBuy.onclick = () => buyCorn();
+    panel.appendChild(cornBuy);
+    coopRows.set("cornbuy", { status: cornBuy });
   }
   if (state.chickens.length < CHICKEN_MAX) {
     const buy = document.createElement("button");
@@ -2544,7 +2605,7 @@ function renderCoop() {
   }
   const note = document.createElement("div");
   note.className = "mkt-note";
-  note.innerHTML = `Fed hens out on the farm fertilize the soil:<br><b>all plants grow +20% faster</b> · they lay 🥚 to sell.<br>Hungry hens (🍽️) stop helping — keep them fed!`;
+  note.innerHTML = `Fed hens roaming the farm: <b>+20% growth</b> · feeding<br>gives an egg, and fed hens keep laying — but eggs<br>only sell by the <b>dozen (${EGG_DOZEN})</b>. A hen left hungry<br>too long <b>starves</b>! ⚠️`;
   panel.appendChild(note);
 
   // ---- the beehive section ----
@@ -2586,10 +2647,20 @@ function updateCoopStatus() {
     if (isFed(c)) {
       const s = Math.ceil((c.fedUntil - now) / 1000);
       r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · fed ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    } else if (now - c.fedUntil > STARVE_MS * 0.5) {
+      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · ⚠️ STARVING!`;
     } else {
-      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · 🍽️ HUNGRY`;
+      r.status.textContent = `${c.out ? "🌱 roaming" : "🏠 in coop"} · 🍽️ hungry`;
     }
     r.outBtn.textContent = c.out ? "🏠 Call back" : "🌱 Send out";
+  }
+  const cc = coopRows.get("corn");
+  if (cc) cc.status.textContent = state.barn.corn || 0;
+  const cb = coopRows.get("cornbuy");
+  if (cb) {
+    cb.status.textContent = inSeason("corn")
+      ? `🌽 Buy corn — $${cornPrice()}`
+      : `🌽 Emergency corn — $${cornPrice()} (out of season!)`;
   }
   const hr = coopRows.get("hive");
   if (hr && state.hive) {
