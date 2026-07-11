@@ -173,6 +173,47 @@
     box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
   }
 
+  /* market demand board — always one tap away */
+  .mkt-btn {
+    position: absolute; top: 82px; left: 10px; z-index: 1003;
+    font-family: inherit; cursor: pointer;
+    background: linear-gradient(180deg, #b8834c, var(--plank-dark));
+    border: 3px solid var(--wood-dark); border-radius: 10px;
+    color: var(--cream); font-weight: bold; font-size: 0.75rem;
+    padding: 3px 9px;
+    box-shadow: 0 3px 0 rgba(62,38,15,0.7), inset 0 1px 0 rgba(255,255,255,0.3);
+    transition: transform 0.1s;
+  }
+  .mkt-btn:hover { transform: scale(1.05); }
+  .mkt-btn.open { background: linear-gradient(180deg, #ffe082, #f5b81e); color: var(--ink); border-color: #8d6708; }
+  .mkt-panel {
+    position: absolute; top: 116px; left: 10px; z-index: 1003;
+    width: 218px; max-height: calc(100% - 128px);
+    overflow-y: auto;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 2px, transparent 2px 60px),
+      linear-gradient(180deg, #b8834c, var(--plank-dark));
+    border: 3px solid var(--wood-dark); border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 5px 0 rgba(62,38,15,0.7), 0 8px 14px rgba(0,0,0,0.3);
+    color: var(--cream);
+  }
+  .mkt-panel h3 {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+    text-align: center; margin-bottom: 6px; text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+  }
+  .mkt-row {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,246,227,0.92); color: var(--ink);
+    border-radius: 8px; padding: 3px 8px; margin-bottom: 4px;
+    font-size: 0.78rem;
+  }
+  .mkt-row.locked { opacity: 0.55; }
+  .mkt-row .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mkt-row b { font-size: 0.74rem; white-space: nowrap; }
+  .mkt-row .pr { font-weight: bold; white-space: nowrap; }
+  .mkt-note { font-size: 0.66rem; text-align: center; opacity: 0.9; margin-top: 2px; line-height: 1.4; }
+
   /* the land itself changes with the season */
   .scene.season-summer .grass { filter: hue-rotate(-9deg) saturate(1.05); }
   .scene.season-summer .hill { filter: hue-rotate(-9deg) saturate(1.05); }
@@ -864,6 +905,8 @@
     <div class="wx" id="wx"></div>
     <div class="wxbadge" id="wxBadge">☀️ Sunny</div>
     <div class="seasonbadge" id="seasonBadge">🌸 Spring</div>
+    <button class="mkt-btn" id="mktBtn" title="Show market demand">📊 Market</button>
+    <div class="mkt-panel" id="mktPanel" hidden></div>
     <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
     <button class="action-btn idle" id="actionBtn" title="Plant / water / chop / sell">🚶</button>
     <div class="light"></div>
@@ -1845,6 +1888,7 @@ function buyLand() {
   save();
   renderHeader();
   renderSeeds();
+  renderMarket();
   updateField();
 }
 
@@ -1944,7 +1988,35 @@ function rollDemand(now) {
   toast(`📊 Market news: ${CROPS[keys[0]].emoji} ${CROPS[keys[0]].name} is in 🔥 HOT demand! ` +
         `${CROPS[keys[2]].emoji}${CROPS[keys[3]].emoji} selling cheap.`);
   renderSeeds();
+  renderMarket();
   save();
+}
+
+// the market board: every crop's demand and today's price, hot deals first
+function renderMarket() {
+  const panel = $("mktPanel");
+  if (panel.hidden) return;
+  const rank = { hot: 0, high: 1, normal: 2, low: 3 };
+  const rows = Object.entries(CROPS)
+    .map(([key, c]) => ({ key, c, dm: demandOf(key) }))
+    .sort((a, b) => rank[a.dm] - rank[b.dm]);
+  panel.innerHTML = "<h3>📊 Market demand</h3>" + rows.map(({ key, c, dm }) => {
+    const d = DEMAND[dm];
+    const locked = state.plotsOwned < c.unlockPlots;
+    const price = Math.round(c.sell * d.priceMult);
+    return `<div class="mkt-row${locked ? " locked" : ""}">
+      <span class="nm">${locked ? "🔒" : ""}${c.emoji} ${c.name}</span>
+      <b style="color:${d.color}">${d.label}</b>
+      <span class="pr">$${price}</span>
+    </div>`;
+  }).join("") + `<div class="mkt-note">🔥 more buyers &amp; better prices · ▼ few buyers, low prices<br>Prices shown are per item at today's demand.</div>`;
+}
+
+function toggleMarket(open) {
+  const panel = $("mktPanel");
+  panel.hidden = open === undefined ? !panel.hidden : !open;
+  $("mktBtn").classList.toggle("open", !panel.hidden);
+  renderMarket();
 }
 
 // ---------------- Season engine ----------------
@@ -2072,7 +2144,7 @@ const stickEl = $("stick");
 const knobEl = $("knob");
 
 sceneEl.addEventListener("touchstart", (e) => {
-  if (e.target.closest(".action-btn, .cust")) return;
+  if (e.target.closest(".action-btn, .cust, .mkt-btn, .mkt-panel")) return;
   const r = sceneEl.getBoundingClientRect();
   for (const t of e.changedTouches) {
     if (farmer.joy === null) {
@@ -2134,7 +2206,7 @@ sceneEl.addEventListener("touchcancel", endJoy);
 
 // tap/click the grass to walk there
 sceneEl.addEventListener("click", (e) => {
-  if (e.target.closest(".action-btn, .spot, .cust")) return;
+  if (e.target.closest(".action-btn, .spot, .cust, .mkt-btn, .mkt-panel")) return;
   const r = sceneEl.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width * 100;
   const y = (e.clientY - r.top) / r.height * 100;
@@ -2143,6 +2215,7 @@ sceneEl.addEventListener("click", (e) => {
 });
 
 $("actionBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); doAction(); });
+$("mktBtn").addEventListener("click", () => toggleMarket());
 
 // ---------------- Boot ----------------
 $("reset").onclick = () => {
