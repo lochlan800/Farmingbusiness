@@ -77,6 +77,14 @@
     padding: 1px 6px; font-size: 0.85rem; white-space: nowrap;
     box-shadow: 0 2px 0 rgba(62,38,15,0.6), inset 0 1px 0 rgba(255,255,255,0.9);
   }
+  .era-tag {
+    background: linear-gradient(180deg, #efe0ff, #d9bef5);
+    color: #4a1a72;
+    border: 2px solid #6a2fa0; border-radius: 999px;
+    padding: 2px 12px; font-size: 0.85rem; font-weight: bold; white-space: nowrap;
+    box-shadow: 0 2px 0 #4a1a72, inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .era-btn { border-color: #6a2fa0 !important; }
   .reset-btn {
     font-family: inherit; font-size: 1rem; color: var(--cream);
     background: none; border: 2px solid rgba(255,246,227,0.5); border-radius: 8px;
@@ -765,6 +773,7 @@
   <header class="wood-panel">
     <h1>🌾 Tiny Farm</h1>
     <div class="money" id="money">$0</div>
+    <div class="era-tag" id="eraTag">🗿 Stone Age</div>
     <div class="barn-inv" id="barnInv"></div>
     <button class="reset-btn" id="reset" title="Start over">↺</button>
   </header>
@@ -942,22 +951,43 @@ const RARITIES = {
 // ---------------- Crop definitions ----------------
 // unlockPlots: how many plots you must own before this seed appears in the shop
 // chops: how many axe swings to harvest — big crops take more
+// ---------------- The march of history ----------------
+// you start at the dawn of human time with flint and clay, and pay to advance
+// through the ages — each age unlocks new crops and better tools
+const ERAS = [
+  { icon: "🗿", name: "Stone Age",      cost: 0,     chopBonus: 0, canUses: 2, canPrice: 40, canName: "clay pot",
+    crops: ["wheat", "carrot"],        blurb: "Flint blades, clay pots, and wild seeds." },
+  { icon: "🏺", name: "Bronze Age",     cost: 150,   chopBonus: 0, canUses: 3, canPrice: 40, canName: "bronze pot",
+    crops: ["potato", "tomato"],       blurb: "Bronze sickles and proper farming begins." },
+  { icon: "⚔️", name: "Iron Age",       cost: 500,   chopBonus: 1, canUses: 4, canPrice: 35, canName: "iron pail",
+    crops: ["corn", "chili"],          blurb: "Iron tools bite deeper — big crops fall a chop sooner." },
+  { icon: "🏰", name: "Medieval Age",   cost: 1500,  chopBonus: 1, canUses: 5, canPrice: 30, canName: "watering can",
+    crops: ["pumpkin", "strawberry"],  blurb: "Wheelbarrows, crop rotation, and market fairs." },
+  { icon: "⚙️", name: "Industrial Age", cost: 4000,  chopBonus: 2, canUses: 6, canPrice: 25, canName: "steel can",
+    crops: ["watermelon", "grapes"],   blurb: "Steel and steam — even pumpkins fall in one swing." },
+  { icon: "🚜", name: "Modern Age",     cost: 10000, chopBonus: 2, canUses: 8, canPrice: 20, canName: "garden hose",
+    crops: ["sunflower", "starfruit"], blurb: "Tractors, hoses, and the mysterious starfruit." },
+];
+function era() { return ERAS[state.era || 0]; }
+function chopsNeeded(c) { return Math.max(1, c.chops - era().chopBonus); }
+
 // grow times scale with rarity: commons are quick, legendaries are a real wait.
 // seasons follow real life: tomatoes love spring/summer, pumpkins are an autumn
 // harvest, wheat grows year-round (winter wheat is real!), starfruit is magic.
+// era: which age of history discovers this crop (index into ERAS).
 const CROPS = {
-  wheat:      { name: "Wheat",      emoji: "🌾", rarity: "common",    cost: 2,   growMs: 15000,  sell: 5,   unlockPlots: 0,  chops: 1, seasons: ["spring","summer","autumn","winter"] },
-  carrot:     { name: "Carrot",     emoji: "🥕", rarity: "common",    cost: 5,   growMs: 30000,  sell: 12,  unlockPlots: 0,  chops: 1, seasons: ["spring","summer","autumn"] },
-  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 45000,  sell: 18,  unlockPlots: 5,  chops: 1, seasons: ["spring","summer","autumn"] },
-  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 60000,  sell: 26,  unlockPlots: 7,  chops: 2, seasons: ["spring","summer"] },
-  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 80000,  sell: 45,  unlockPlots: 9,  chops: 2, seasons: ["summer","autumn"] },
-  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 100000, sell: 56,  unlockPlots: 11, chops: 2, seasons: ["summer"] },
-  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 130000, sell: 80,  unlockPlots: 13, chops: 3, seasons: ["summer","autumn"] },
-  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 160000, sell: 140, unlockPlots: 15, chops: 2, seasons: ["spring","summer"] },
-  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 190000, sell: 185, unlockPlots: 17, chops: 3, seasons: ["summer"] },
-  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 240000, sell: 260, unlockPlots: 19, chops: 2, seasons: ["summer","autumn"] },
-  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 280000, sell: 360, unlockPlots: 21, chops: 2, seasons: ["summer","autumn"] },
-  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, unlockPlots: 23, chops: 3, seasons: ["spring","summer","autumn","winter"] },
+  wheat:      { name: "Wheat",      emoji: "🌾", rarity: "common",    cost: 2,   growMs: 15000,  sell: 5,   era: 0, chops: 1, seasons: ["spring","summer","autumn","winter"] },
+  carrot:     { name: "Carrot",     emoji: "🥕", rarity: "common",    cost: 5,   growMs: 30000,  sell: 12,  era: 0, chops: 1, seasons: ["spring","summer","autumn"] },
+  potato:     { name: "Potato",     emoji: "🥔", rarity: "common",    cost: 8,   growMs: 45000,  sell: 18,  era: 1, chops: 1, seasons: ["spring","summer","autumn"] },
+  tomato:     { name: "Tomato",     emoji: "🍅", rarity: "uncommon",  cost: 12,  growMs: 60000,  sell: 26,  era: 1, chops: 2, seasons: ["spring","summer"] },
+  corn:       { name: "Corn",       emoji: "🌽", rarity: "uncommon",  cost: 20,  growMs: 80000,  sell: 45,  era: 2, chops: 2, seasons: ["summer","autumn"] },
+  chili:      { name: "Chili",      emoji: "🌶️", rarity: "uncommon",  cost: 26,  growMs: 100000, sell: 56,  era: 2, chops: 2, seasons: ["summer"] },
+  pumpkin:    { name: "Pumpkin",    emoji: "🎃", rarity: "rare",      cost: 35,  growMs: 130000, sell: 80,  era: 3, chops: 3, seasons: ["summer","autumn"] },
+  strawberry: { name: "Strawberry", emoji: "🍓", rarity: "rare",      cost: 60,  growMs: 160000, sell: 140, era: 3, chops: 2, seasons: ["spring","summer"] },
+  watermelon: { name: "Watermelon", emoji: "🍉", rarity: "rare",      cost: 80,  growMs: 190000, sell: 185, era: 4, chops: 3, seasons: ["summer"] },
+  grapes:     { name: "Grapes",     emoji: "🍇", rarity: "epic",      cost: 110, growMs: 240000, sell: 260, era: 4, chops: 2, seasons: ["summer","autumn"] },
+  sunflower:  { name: "Sunflower",  emoji: "🌻", rarity: "epic",      cost: 150, growMs: 280000, sell: 360, era: 5, chops: 2, seasons: ["summer","autumn"] },
+  starfruit:  { name: "Starfruit",  emoji: "⭐", rarity: "legendary", cost: 250, growMs: 360000, sell: 650, era: 5, chops: 3, seasons: ["spring","summer","autumn","winter"] },
 };
 const SEASON_ICON = { spring: "🌸", summer: "☀️", autumn: "🍂", winter: "❄️" };
 
@@ -1160,6 +1190,7 @@ function freshState() {
     plots: Array.from({ length: GRID }, () => null),
     barn: {},                // harvested crops: { wheat: 3, ... }
     water: 0,                // waterings left in the can
+    era: 0,                  // index into ERAS — everyone starts in the Stone Age
     weather: null,           // { kind, until, next } — rolled on first tick
     season: null,            // { name, until } — starts in spring on first tick
     demand: null,            // { crop: "hot"|"high"|"normal"|"low" } — rolled on first tick
@@ -1195,6 +1226,11 @@ function load() {
         const now = Date.now();
         // older saves had a one-time can purchase — convert it to charges
         if (typeof s.water !== "number") s.water = s.can ? CAN_USES : 0;
+        // older saves predate the ages — grant an era matching their old progress
+        if (typeof s.era !== "number") {
+          const p = s.plotsOwned || 4;
+          s.era = p >= 23 ? 5 : p >= 19 ? 4 : p >= 15 ? 3 : p >= 11 ? 2 : p >= 7 ? 1 : 0;
+        }
         // older saves tracked plantedAt timestamps — convert to banked growth
         for (const p of s.plots) {
           if (!p) continue;
@@ -1286,7 +1322,7 @@ function popMoney() {
 }
 
 function unlockedCrops() {
-  return Object.keys(CROPS).filter(k => state.plotsOwned >= CROPS[k].unlockPlots);
+  return Object.keys(CROPS).filter(k => CROPS[k].era <= (state.era || 0));
 }
 
 // deterministic per-spot jitter so the field looks hand-planted, not gridded
@@ -1512,7 +1548,7 @@ function updateNearHighlight(t) {
   btn.classList.remove("idle");
   btn.textContent =
     t.kind === "plant" ? CROPS[selectedSeed].emoji :
-    t.kind === "chop"  ? "🪓" :
+    t.kind === "chop"  ? (state.era === 0 ? "🪨" : "🪓") :
     t.kind === "water" ? "💧" :
     t.kind === "drain" ? "🪣" :
     t.kind === "thaw"  ? "⛏️" :
@@ -1671,6 +1707,7 @@ function moveCustomers(dt) {
 // ---------------- Rendering (header / shop) ----------------
 function renderHeader() {
   $("money").textContent = "$" + state.money;
+  $("eraTag").textContent = `${era().icon} ${era().name}`;
   const inv = $("barnInv");
   inv.innerHTML = "";
   const entries = Object.entries(state.barn).filter(([, n]) => n > 0);
@@ -1689,19 +1726,35 @@ function renderHeader() {
 function renderSeeds() {
   const wrap = $("seeds");
   wrap.innerHTML = "";
+
+  // advance-the-age chip comes first: pay to move history forward
+  const cur = era(), nxt = ERAS[state.era + 1];
+  const eraBtn = document.createElement("button");
+  eraBtn.id = "eraBtn";
+  eraBtn.className = "land-btn era-btn";
+  if (nxt) {
+    eraBtn.title = `Advance to the ${nxt.name} — unlocks ${nxt.crops.map(k => CROPS[k].name).join(" & ")} and better tools. ${nxt.blurb}`;
+    eraBtn.innerHTML = `<span class="big">${nxt.icon}</span><b>$${nxt.cost}</b><small>next age</small>`;
+    eraBtn.onclick = () => advanceEra();
+  } else {
+    eraBtn.title = "You have reached the Modern Age — the final era of history";
+    eraBtn.innerHTML = `<span class="big">${cur.icon}</span><b>${cur.name.split(" ")[0]}</b><small>final age</small>`;
+  }
+  wrap.appendChild(eraBtn);
+
   for (const [key, c] of Object.entries(CROPS)) {
-    const locked = state.plotsOwned < c.unlockPlots;
+    const locked = c.era > state.era;
     const rar = RARITIES[c.rarity];
     const btn = document.createElement("button");
     btn.className = "seed-btn" + (key === selectedSeed ? " selected" : "") + (locked ? " locked" : "");
     const dm = DEMAND[demandOf(key)];
     const off = !locked && !inSeason(key);
     btn.title = locked
-      ? `${c.name} (${rar.label}) — own ${c.unlockPlots} plots to unlock. Grows in ${seasonIcons(key)}`
+      ? `${c.name} (${rar.label}) — discovered in the ${ERAS[c.era].name}. Grows in ${seasonIcons(key)}`
       : `${c.name} (${rar.label}) — plant $${c.cost}, sells $${c.sell}. Grows in ${seasonIcons(key)}`;
     if (off) btn.classList.add("off-season");
     btn.innerHTML = locked
-      ? `<span class="big">🔒</span>${c.unlockPlots} plots`
+      ? `<span class="big">🔒</span>${ERAS[c.era].icon} age`
       : off
         ? `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:#1565c0">💤 ${seasonIcons(key)}</small>`
         : `<span class="big">${c.emoji}</span>$${c.cost}<small style="color:${dm.color}">${dm.label}</small>`;
@@ -1709,19 +1762,19 @@ function renderSeeds() {
     btn.style.borderColor = rar.color;
     if (!locked) btn.style.boxShadow = `0 2px 0 rgba(90,60,25,0.5), 0 4px 6px rgba(60,35,10,0.2), inset 0 -3px 0 ${rar.color}`;
     btn.onclick = () => {
-      if (locked) { sndNope(); toast(`Own ${c.unlockPlots} plots to unlock ${c.name}!`); return; }
+      if (locked) { sndNope(); toast(`${c.emoji} ${c.name} is discovered in the ${ERAS[c.era].icon} ${ERAS[c.era].name}!`); return; }
       selectedSeed = key;
       lastNear = "?";        // refresh the action button icon
       renderSeeds();
     };
     wrap.appendChild(btn);
   }
-  // the watering can — $40 buys 3 waterings, chip shows what's left in the can
+  // this era's water carrier — from clay pot to garden hose
   const canBtn = document.createElement("button");
   canBtn.className = "seed-btn";
   canBtn.style.borderColor = "#42a5f5";
-  canBtn.title = `Watering can — $${CAN_PRICE} for ${CAN_USES} waterings. Each soak makes a crop grow ${WATER_MULT}× faster for ${WATER_MS / 1000}s.`;
-  canBtn.innerHTML = `<span class="big">💧</span>$${CAN_PRICE}${state.water > 0 ? `<small>×${state.water} left</small>` : `<small>×${CAN_USES} uses</small>`}`;
+  canBtn.title = `${cur.canName} — $${cur.canPrice} for ${cur.canUses} waterings. Each soak makes a crop grow ${WATER_MULT}× faster for ${WATER_MS / 1000}s.`;
+  canBtn.innerHTML = `<span class="big">💧</span>$${cur.canPrice}${state.water > 0 ? `<small>×${state.water} left</small>` : `<small>×${cur.canUses} uses</small>`}`;
   canBtn.onclick = () => buyWater();
   wrap.appendChild(canBtn);
   // buy-land button lives on the shelf too, so it never covers the farm
@@ -1744,7 +1797,7 @@ function renderAll() {
 // ---------------- Actions ----------------
 function plantAt(i) {
   const c = CROPS[selectedSeed];
-  if (state.plotsOwned < c.unlockPlots) return;
+  if (c.era > state.era) return;
   if (!inSeason(selectedSeed)) {
     sndNope();
     toast(`${c.emoji} ${c.name} won't grow in ${SEASON_ICON[currentSeason()]} ${SEASONS[currentSeason()].name} — it grows in ${seasonIcons(selectedSeed)}`);
@@ -1823,7 +1876,7 @@ function chopAt(i) {
   void farmerEl.offsetWidth;
   sndChop();
 
-  if (p.chopsLeft === undefined) p.chopsLeft = c.chops;
+  if (p.chopsLeft === undefined) p.chopsLeft = chopsNeeded(c);
   p.chopsLeft--;
 
   const s = spotEls[i];
@@ -1883,19 +1936,43 @@ function serve(id) {
 }
 
 function buyWater() {
-  if (state.money < CAN_PRICE) {
+  const e = era();
+  if (state.money < e.canPrice) {
     sndNope();
-    toast(`Need $${CAN_PRICE} to fill the watering can!`);
+    toast(`Need $${e.canPrice} to fill the ${e.canName}!`);
     return;
   }
-  state.money -= CAN_PRICE;
-  state.water += CAN_USES;
+  state.money -= e.canPrice;
+  state.water += e.canUses;
   sndBuy();
-  toast(`💧 Watering can filled — ${state.water} waterings! A soaked crop grows ${WATER_MULT}× faster.`);
+  toast(`💧 ${e.canName} filled — ${state.water} waterings! A soaked crop grows ${WATER_MULT}× faster.`);
   lastNear = "?";
   save();
   renderHeader();
   renderSeeds();
+}
+
+function advanceEra() {
+  const nxt = ERAS[state.era + 1];
+  if (!nxt) return;
+  if (state.money < nxt.cost) {
+    sndNope();
+    toast(`Need $${nxt.cost} to advance to the ${nxt.icon} ${nxt.name}!`);
+    return;
+  }
+  state.money -= nxt.cost;
+  state.era++;
+  sndBuy();
+  popMoney();
+  const crops = nxt.crops.map(k => CROPS[k].emoji).join(" ");
+  toast(`${nxt.icon} Welcome to the ${nxt.name}! ${nxt.blurb}`);
+  toast(`🌱 New crops: ${crops} · 💧 ${nxt.canName} holds ${nxt.canUses}` +
+        (nxt.chopBonus > ERAS[state.era - 1].chopBonus ? " · 🪓 sharper tools chop faster!" : ""));
+  lastNear = "?";
+  save();
+  renderHeader();
+  renderSeeds();
+  renderMarket();
 }
 
 function buyLand() {
@@ -1909,11 +1986,6 @@ function buyLand() {
   state.plotsOwned++;
   sndBuy();
   toast(`🎉 New plot! You now own ${state.plotsOwned} plots.`);
-  for (const c of Object.values(CROPS)) {
-    if (c.unlockPlots === state.plotsOwned) {
-      toast(`🌟 New ${RARITIES[c.rarity].label.toUpperCase()} seed unlocked: ${c.emoji} ${c.name}!`);
-    }
-  }
   lastNear = "?";
   save();
   renderHeader();
@@ -2033,7 +2105,7 @@ function renderMarket() {
     .sort((a, b) => rank[a.dm] - rank[b.dm]);
   panel.innerHTML = "<h3>📊 Market demand</h3>" + rows.map(({ key, c, dm }) => {
     const d = DEMAND[dm];
-    const locked = state.plotsOwned < c.unlockPlots;
+    const locked = c.era > state.era;
     const off = !inSeason(key);
     const price = Math.round(c.sell * d.priceMult);
     return `<div class="mkt-row${locked ? " locked" : ""}${off ? " locked" : ""}" title="Grows in ${seasonIcons(key)}">
